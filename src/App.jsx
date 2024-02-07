@@ -27,7 +27,8 @@ function App() {
           state.gl.toneMapping = THREE.ReinhardToneMapping }}
           shadows
           gl={{
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
+            precision: 'highp'
         }}
         >
           {/* <SheetProvider sheet={demoSheet}> */}

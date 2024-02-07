@@ -15,26 +15,26 @@ import WASDMovement from './WASDMovement';
 export default function Experience() {
     const selfPlayer = useRef();
     useFrame(() => {
-        // console.log(selfPlayer.current);
+        console.log(selfPlayer.current.position);
     });
     return(
         <>
-        <Physics gravity={[0, 0, 0]}colliders={false} debug>
+        {/* <Physics gravity={[0, 0, 0]}colliders={false} debug> */}
             
             <axesHelper args={[2]} />
             <Environment files="hdris/nebula_n0.hdr" background/>
-            <RigidBody colliders="cuboid">
-            <mesh ref={selfPlayer} position={[0,0,0]} rotation={[0,0,0]} scale={[1,1,1]}>
+            {/* <RigidBody colliders="cuboid"> */}
+            <mesh ref={selfPlayer} scale={[1,1,1]}>
                 <boxGeometry />
                 <meshStandardMaterial roughness={0.1} metalness={0.5}/>
             </mesh>
-            </RigidBody>
-            <RigidBody colliders="ball">
+            {/* </RigidBody> */}
+            {/* <RigidBody colliders="ball"> */}
                 <Sphere position={[10,10,10]}/>
-            </RigidBody>
-            {/* <OrbitControls/> */}
+            {/* </RigidBody> */}
+            <OrbitControls/>
             <WASDMovement object={selfPlayer.current} />
-        </Physics>
+        {/* </Physics> */}
         <EffectComposer>
             <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>

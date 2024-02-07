@@ -113,6 +113,7 @@ const WASDMovement = ({ object, movementSpeed = 0.1, acceleration = 0.001, decel
         const _R = _PARENT_Q.clone();
     
         const acc = acceleration_.clone();
+        acc.multiplyScalar(10.0);
         if (keysState.shift) {
             acc.multiplyScalar(2.0);
         }
@@ -157,6 +158,7 @@ const WASDMovement = ({ object, movementSpeed = 0.1, acceleration = 0.001, decel
         pos.add(forward);
         pos.add(sideways);
         pos.add(updown);
+        // console.log(objectRef.current.position);
         objectRef.current.position.copy(pos);
         objectRef.current.quaternion.copy(_R);
     }); 
