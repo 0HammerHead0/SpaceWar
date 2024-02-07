@@ -9,12 +9,13 @@ import { TextureLoader } from 'three';
 import { useScroll, useTexture, Html, Sphere, Box, Torus, TorusKnot } from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import { gsap } from 'gsap';
+import WASDMovement from './WASDMovement';
 
 
 export default function Experience() {
     const selfPlayer = useRef();
     useFrame(() => {
-        console.log(selfPlayer.current);
+        // console.log(selfPlayer.current);
     });
     return(
         <>
@@ -31,7 +32,8 @@ export default function Experience() {
             <RigidBody colliders="ball">
                 <Sphere position={[10,10,10]}/>
             </RigidBody>
-            <OrbitControls/>
+            {/* <OrbitControls/> */}
+            <WASDMovement object={selfPlayer.current} />
         </Physics>
         <EffectComposer>
             <Vignette eskil={false} offset={0.1} darkness={1.1} />
