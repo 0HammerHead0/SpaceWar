@@ -1,20 +1,41 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Text, Environment, AdaptiveDpr, BakeShadows, PerformanceMonitor, MeshReflectorMaterial, useEnvironment } from '@react-three/drei';
+import { FirstPersonControls,OrbitControls,  useGLTF, Text, Environment, AdaptiveDpr, BakeShadows, PerformanceMonitor, MeshReflectorMaterial, useEnvironment } from '@react-three/drei';
 import { EffectComposer, Bloom, DepthOfField, Vignette, DotScreen, Noise, SSAO, SMAA, GodRays, FXAA, Sepia, SelectiveBloom, ShockWave, HueSaturation, Scanline, Autofocus, LensFlare } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import PropTypes from 'prop-types';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { TextureLoader } from 'three';
-import { useScroll, useTexture, Html } from '@react-three/drei';
+import { useScroll, useTexture, Html, Sphere, Box, Torus, TorusKnot } from '@react-three/drei';
+import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import { gsap } from 'gsap';
 
 
 export default function Experience() {
+    const selfPlayer = useRef();
+    useFrame(() => {
+        console.log(selfPlayer.current);
+    });
     return(
         <>
+        <Physics gravity={[0, 0, 0]}colliders={false} debug>
+            
+            <axesHelper args={[2]} />
             <Environment files="hdris/nebula_n0.hdr" background/>
-            <OrbitControls />
+            <RigidBody colliders="cuboid">
+            <mesh ref={selfPlayer} position={[0,0,0]} rotation={[0,0,0]} scale={[1,1,1]}>
+                <boxGeometry />
+                <meshStandardMaterial roughness={0.1} metalness={0.5}/>
+            </mesh>
+            </RigidBody>
+            <RigidBody colliders="ball">
+                <Sphere position={[10,10,10]}/>
+            </RigidBody>
+            <OrbitControls/>
+        </Physics>
+        <EffectComposer>
+            <Vignette eskil={false} offset={0.1} darkness={1.1} />
+        </EffectComposer>
         </>
     )
 }
