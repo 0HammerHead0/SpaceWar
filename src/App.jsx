@@ -30,6 +30,7 @@ function App() {
             preserveDrawingBuffer: true,
             precision: 'highp'
         }}
+        camera={{ position: [8, 8, 8], fov: 50}}
         >
           {/* <SheetProvider sheet={demoSheet}> */}
             <Experience/>

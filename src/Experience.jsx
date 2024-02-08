@@ -6,43 +6,37 @@ import * as THREE from 'three';
 import PropTypes from 'prop-types';
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { TextureLoader } from 'three';
-import { useScroll, useTexture, Html, Sphere, Box, Torus, TorusKnot } from '@react-three/drei';
+import { useScroll, useTexture, Html, Sphere,Plane, Box, Torus, TorusKnot } from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import { gsap } from 'gsap';
-// import WASDMovement from './WASDMovement';
-import { WASDMovement } from './WASDMovement2';
+import WASDMovement from './WASDMovement2';
 
 
 export default function Experience() {
-    const selfPlayer = useRef();
-    useFrame(() => {
-        console.log(selfPlayer.current.position);
-    });
+    useEffect(() => {
+    }, []);
     return(
         <>
-        <Physics gravity={[0, 0, 0]}colliders={false} debug>
+        <axesHelper args={[2]} />
+        <Physics
+            gravity={[0, 0, 0]}
+            colliders={false}
+            debug>
             
-            <axesHelper args={[2]} />
-            <Environment files="hdris/nebula_n0.hdr" background/>
-            <RigidBody 
-            ref={selfPlayer}
-            colliders="cuboid"
-            friction={0}
-            linearDamping={0.5}>
-                <mesh >
-                    <boxGeometry />
-                    <meshStandardMaterial roughness={0.1} metalness={0.5}/>
-                </mesh>
-            </RigidBody>
-            {/* <RigidBody colliders="ball"> */}
+            
+            <RigidBody colliders="ball">
                 <Sphere position={[10,10,10]}/>
-            {/* </RigidBody> */}
-            <OrbitControls/>
-            <WASDMovement object={selfPlayer.current} />
+            </RigidBody>
+            <WASDMovement/>
+            {/* <RigidBody colliders="cuboid" type={'fixed'} restitution={0.1}>
+                <Plane position={[0,-0.3,0]}scale={10} rotation={[-Math.PI/2,0,0]}/>
+            </RigidBody> */}
         </Physics>
-        <EffectComposer>
-            <Vignette eskil={false} offset={0.1} darkness={1.1} />
-        </EffectComposer>
+        <Environment files="hdris/nebula_n0.hdr" background/>
+        <OrbitControls/>
+        {/* <EffectComposer> */}
+            {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}
+        {/* </EffectComposer> */}
         </>
     )
 }
