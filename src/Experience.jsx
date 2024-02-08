@@ -9,7 +9,8 @@ import { TextureLoader } from 'three';
 import { useScroll, useTexture, Html, Sphere, Box, Torus, TorusKnot } from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import { gsap } from 'gsap';
-import WASDMovement from './WASDMovement';
+// import WASDMovement from './WASDMovement';
+import { WASDMovement } from './WASDMovement2';
 
 
 export default function Experience() {
@@ -19,22 +20,26 @@ export default function Experience() {
     });
     return(
         <>
-        {/* <Physics gravity={[0, 0, 0]}colliders={false} debug> */}
+        <Physics gravity={[0, 0, 0]}colliders={false} debug>
             
             <axesHelper args={[2]} />
             <Environment files="hdris/nebula_n0.hdr" background/>
-            {/* <RigidBody colliders="cuboid"> */}
-            <mesh ref={selfPlayer} scale={[1,1,1]}>
-                <boxGeometry />
-                <meshStandardMaterial roughness={0.1} metalness={0.5}/>
-            </mesh>
-            {/* </RigidBody> */}
+            <RigidBody 
+            ref={selfPlayer}
+            colliders="cuboid"
+            friction={0}
+            linearDamping={0.5}>
+                <mesh >
+                    <boxGeometry />
+                    <meshStandardMaterial roughness={0.1} metalness={0.5}/>
+                </mesh>
+            </RigidBody>
             {/* <RigidBody colliders="ball"> */}
                 <Sphere position={[10,10,10]}/>
             {/* </RigidBody> */}
             <OrbitControls/>
             <WASDMovement object={selfPlayer.current} />
-        {/* </Physics> */}
+        </Physics>
         <EffectComposer>
             <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>

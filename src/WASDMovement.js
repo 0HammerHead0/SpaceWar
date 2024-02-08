@@ -123,21 +123,21 @@ const WASDMovement = ({ object, movementSpeed = 0.1, acceleration = 0.001, decel
             _Q.setFromAxisAngle(_A, Math.PI * timeInSeconds * acc.y * -1);
             _R.multiply(_Q);
         }
-        if (keysState.s || keysState.S) {
-            _A.set(1, 0, 0);
-            _Q.setFromAxisAngle(_A, Math.PI * timeInSeconds * acc.y * 1);
-            _R.multiply(_Q);
-        }
-        if (keysState.a || keysState.A) {
-            _A.set(0, 1, 0);
-            _Q.setFromAxisAngle(_A, -Math.PI * timeInSeconds * acc.y * -1);
-            _R.multiply(_Q);
-        }
-        if (keysState.d || keysState.D) {
-            _A.set(0, 1, 0);
-            _Q.setFromAxisAngle(_A, -Math.PI * timeInSeconds * acc.y * 1);
-            _R.multiply(_Q);
-        }
+        // if (keysState.s || keysState.S) {
+        //     _A.set(1, 0, 0);
+        //     _Q.setFromAxisAngle(_A, Math.PI * timeInSeconds * acc.y * 1);
+        //     _R.multiply(_Q);
+        // }
+        // if (keysState.a || keysState.A) {
+        //     _A.set(0, 1, 0);
+        //     _Q.setFromAxisAngle(_A, -Math.PI * timeInSeconds * acc.y * -1);
+        //     _R.multiply(_Q);
+        // }
+        // if (keysState.d || keysState.D) {
+        //     _A.set(0, 1, 0);
+        //     _Q.setFromAxisAngle(_A, -Math.PI * timeInSeconds * acc.y * 1);
+        //     _R.multiply(_Q);
+        // }
         const forward = new THREE.Vector3(0, 0, 1);
         forward.applyQuaternion(_PARENT_Q);
         forward.normalize();
