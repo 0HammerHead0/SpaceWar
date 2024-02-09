@@ -15,23 +15,35 @@ const maxAngleY = Math.PI/6;
 
 const maxCumulativeRotationX = Math.PI / 3; // 60 degrees in radians
 const maxCumulativeRotationY = Math.PI / 9; // 20 degrees in radians
+let cumulativeRotationX = 0;
+let cumulativeRotationY = 0;
+const rotationThreshold = 0.05; // Adjust as needed
 
-const rotateModelAccordingToMouse = (state, playerBodyMesh) => {
+const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
     const mouseMovement = getMouseMovement();
-    const percentageX = mouseMovement.x / 10;
-    const percentageY = mouseMovement.y / 10;
+    const percentageX = mouseMovement.x;
+    const percentageY = mouseMovement.y;
 
-    const targetAngleX = -maxAngleX/30 * percentageX;
-    const targetAngleY = -maxAngleY/30 * percentageY;
+    let targetAngleX = -maxAngleX * percentageX * delta;
+    let targetAngleY = -maxAngleY* percentageY * delta;
+
+    cumulativeRotationX = THREE.MathUtils.clamp(cumulativeRotationX + targetAngleX, -maxCumulativeRotationX, maxCumulativeRotationX);
+    cumulativeRotationY = THREE.MathUtils.clamp(cumulativeRotationY + targetAngleY, -maxCumulativeRotationY, maxCumulativeRotationY);
 
     const currentRotation = playerBodyMesh.current.quaternion.clone();
-    
+
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
     const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
 
     currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
 
     playerBodyMesh.current.setRotationFromQuaternion(currentRotation);
+
+    // Check if rotation is close to zero, then reset cumulative rotations
+    if (Math.abs(targetAngleX) < rotationThreshold && Math.abs(targetAngleY) < rotationThreshold) {
+        cumulativeRotationX = 0;
+        cumulativeRotationY = 0;
+    }
 };
 
 
@@ -138,10 +150,7 @@ const PlayerInput = () => {
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
-        rotateModelAccordingToMouse(state,playerBodyMesh);
-        const forwardBackwardVector = new THREE.Vector3(0, 0, -forwardBackwardDistance);
-        const leftRightVector = new THREE.Vector3(-leftRightDistance, 0, 0);
-        const facingNormal = getFacingNormal();
+        rotateModelAccordingToMouse(state,delta,playerBodyMesh);
     });
     return <>
     <mesh ref={playerBodyMesh}>
