@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 public/hdris
-public/model
+public/models
 src/assets/hdris
 # Editor directories and files
 .vscode/*

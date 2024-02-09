@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import {math} from './math.js';
 import * as THREE from 'three';
+import { useGLTF } from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 
 const velocity     = {forward_backward:0,left_right:0};
@@ -45,7 +46,13 @@ const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
         cumulativeRotationY = 0;
     }
 };
-
+function Model({ envMap }) {
+    const gltf = useGLTF('models/compressed.glb');
+    const model = gltf.scene;
+    model.traverse((child) => {
+    });
+    return <primitive object={gltf.scene} />;
+  }
 
 function updateCamPos(state,delta,playerBody){
     const idealOffset = new THREE.Vector3(0,6,8);
