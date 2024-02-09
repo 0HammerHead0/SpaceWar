@@ -8,7 +8,7 @@ import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-
 
 const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
-const deceleration = {forward_backward:0.01,left_right:0.005};
+const deceleration = {forward_backward:0.008,left_right:0.003};
 const vecotityMax  = {forward_backward:0.1,left_right:0.05};
 
 const maxAngleX = Math.PI/4;
@@ -47,9 +47,12 @@ const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
     }
 };
 function Model({ envMap }) {
-    const gltf = useGLTF('models/compressed.glb');
+    const gltf = useGLTF('models/swordfish.glb');
     const model = gltf.scene;
     model.traverse((child) => {
+        child.castShadow = true;
+        child.receiveShadow = true;
+
     });
     return <primitive object={gltf.scene} />;
   }
@@ -107,41 +110,58 @@ const PlayerInput = () => {
     }, []);
     useFrame((state, delta) => {
         const playerBody = playerBodyMesh.current;
+        var modelMoving = false;
         if(keysState.w || keysState.W){
             if(velocity.forward_backward<vecotityMax.forward_backward)
                 velocity.forward_backward += acceleration.forward_backward * delta;
+            modelMoving = true;
         }
         if(keysState.s || keysState.S){
             if(velocity.forward_backward>-vecotityMax.forward_backward)
-                velocity.forward_backward -= acceleration.forward_backward * delta;
+            velocity.forward_backward -= acceleration.forward_backward * delta;
+            modelMoving = true;
         }
         if(keysState.a || keysState.A){
             if(velocity.left_right>-vecotityMax.left_right)
-                velocity.left_right -= acceleration.left_right * delta;
+            velocity.left_right -= acceleration.left_right * delta;
+            modelMoving = true;
         }
         if(keysState.d || keysState.D){
             if(velocity.left_right<vecotityMax.left_right)
-                velocity.left_right += acceleration.left_right * delta;
+            velocity.left_right += acceleration.left_right * delta;
+            modelMoving = true;
         }
         // deceleration
         if (!keysState.w && !keysState.W) {
             if (velocity.forward_backward > 0) {
                 velocity.forward_backward -= deceleration.forward_backward * delta;
+                modelMoving = true;
+                if(velocity.forward_backward<0.0000005)
+                    velocity.forward_backward = 0;
             }
         }
         if (!keysState.s && !keysState.S) {
             if (velocity.forward_backward < 0) {
                 velocity.forward_backward += deceleration.forward_backward * delta;
+                modelMoving = true;
+                if(velocity.forward_backward>-0.0000005)
+                    velocity.forward_backward = 0;
             }
         }
         if (!keysState.a && !keysState.A) {
             if (velocity.left_right > 0) {
+                modelMoving = true;
                 velocity.left_right -= deceleration.left_right * delta;
+                if(velocity.left_right<0.0000005)
+                    velocity.left_right = 0;
             }
         }
         if (!keysState.d && !keysState.D) {
             if (velocity.left_right < 0) {
+                modelMoving = true;
                 velocity.left_right += deceleration.left_right * delta;
+                if(velocity.left_right>-0.0000005)
+                    velocity.left_right = 0;
             }
         }
         const forwardBackwardDistance = velocity.forward_backward ;
@@ -157,12 +177,14 @@ const PlayerInput = () => {
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
-        rotateModelAccordingToMouse(state,delta,playerBodyMesh);
+        // if(modelMoving)
+            rotateModelAccordingToMouse(state,delta,playerBodyMesh);
     });
     return <>
-    <mesh ref={playerBodyMesh}>
-        <boxGeometry />
-        <meshStandardMaterial roughness={0.1} metalness={0.5} side={THREE.DoubleSide}/>
+    <mesh ref={playerBodyMesh} scale={0.7 } >
+        {/* <boxGeometry />
+        <meshStandardMaterial roughness={0.1} metalness={0.5} side={THREE.DoubleSide}/> */}
+        <Model/>
     </mesh>
     </>
 };
