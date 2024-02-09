@@ -19,7 +19,7 @@ const WASDMovement = () => {
 
     const getFacingNormal = () => {
         const defaultNormal = new THREE.Vector3(0, 0, 0);
-        const worldNormal = defaultNormal.clone().applyMatrix4(playerBody.current.matrixWorld);
+        const worldNormal = defaultNormal.clone().applyMatrix4(playerBodyMesh.current.matrixWorld);
     
         return worldNormal;
     };
@@ -49,8 +49,11 @@ const WASDMovement = () => {
     }, []);
 
     useEffect(() => {
-        
-    }, [keysState]);
+        playerBody.current.rotation.x += 0.01;
+        playerBody.current.rotation.y += 0.02;
+        playerBody.current.rotation.z += 0.03;
+        console.log(playerBody.current.rotation())
+    });
     useFrame((state, delta) => {
         const impulse = { x: 0, y: 0, z: 0 };
         const impulseStrength = 10 * delta;
@@ -67,13 +70,6 @@ const WASDMovement = () => {
             impulse.x += impulseStrength;
         }
         playerBody.current.applyImpulse(impulse);
-        // camera.position.copy(playerBody.current.translation());
-        // camera.lookAt(playerBody.current.translation().x, playerBody.current.translation().y, playerBody.current.translation().z);
-        // camera.position.z += 5;wawadasd
-        // playerBodyMesh.current.position.copy(playerBody.current.translwation());
-        console.log(playerBodyMesh.current.position)
-        playerBodyMesh.current.position.copy(playerBody.current.translation());
-        // console.log(playerBody.current.translation())
     });
     return <>
     <RigidBody

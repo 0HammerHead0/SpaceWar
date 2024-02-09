@@ -9,8 +9,8 @@ import { TextureLoader } from 'three';
 import { useScroll, useTexture, Html, Sphere,Plane, Box, Torus, TorusKnot } from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import { gsap } from 'gsap';
-import WASDMovement from './WASDMovement2';
-
+// import WASDMovement from './WASDMovement2';
+import PlayerInput from './player_input';
 
 export default function Experience() {
     useEffect(() => {
@@ -27,7 +27,8 @@ export default function Experience() {
             <RigidBody colliders="ball">
                 <Sphere position={[10,10,10]}/>
             </RigidBody>
-            <WASDMovement/>
+            {/* <WASDMovement/> */}
+            <PlayerInput/>
             {/* <RigidBody colliders="cuboid" type={'fixed'} restitution={0.1}>
                 <Plane position={[0,-0.3,0]}scale={10} rotation={[-Math.PI/2,0,0]}/>
             </RigidBody> */}
