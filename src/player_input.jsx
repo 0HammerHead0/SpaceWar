@@ -82,7 +82,6 @@ const PlayerInput = () => {
         // deceleration
         if (!keysState.w && !keysState.W) {
             if (velocity.forward_backward > 0) {
-                console.log('decelerating', velocity.forward_backward);
                 velocity.forward_backward -= deceleration.forward_backward * delta;
             }
         }
@@ -105,29 +104,12 @@ const PlayerInput = () => {
         const leftRightDistance = velocity.left_right ;
         playerBody.position.x += leftRightDistance;
         playerBody.position.z -= forwardBackwardDistance;
-        // state.camera.position.set(playerBody.position.x, playerBody.position.y + 6, playerBody.position.z + 8);
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
-        // state.camera.lookAt(playerBody.position);
         const forwardBackwardVector = new THREE.Vector3(0, 0, -forwardBackwardDistance);
         const leftRightVector = new THREE.Vector3(-leftRightDistance, 0, 0);
         const facingNormal = getFacingNormal();
-        // ----------------------------------------------------------
-        // const matrixWorld = playerBody.matrixWorld.clone();
-
-        // // Extracting the forward vector (negative Z-axis)
-        // const forwardVector = new THREE.Vector3(0, 0, -1);
-        // forwardVector.applyMatrix4(matrixWorld);
-
-        // console.log('Forward Vector:', forwardVector);
-
-        // ----------------------------------------------------------
-        // const forwardBackwardComponent = forwardVector.clone().multiply(forwardBackwardVector);
-        // const leftRightComponent = forwardVector.clone().multiply(leftRightVector);
-        // playerBody.position.add(forwardBackwardComponent);
-        // playerBody.position.add(leftRightComponent);
-
     });
     return <>
     <mesh ref={playerBodyMesh}>
