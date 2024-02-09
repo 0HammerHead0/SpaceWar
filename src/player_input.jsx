@@ -9,6 +9,32 @@ const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
 const deceleration = {forward_backward:0.01,left_right:0.005};
 const vecotityMax  = {forward_backward:0.1,left_right:0.05};
+
+const maxAngleX = Math.PI/4;
+const maxAngleY = Math.PI/6;
+
+const maxCumulativeRotationX = Math.PI / 3; // 60 degrees in radians
+const maxCumulativeRotationY = Math.PI / 9; // 20 degrees in radians
+
+const rotateModelAccordingToMouse = (state, playerBodyMesh) => {
+    const mouseMovement = getMouseMovement();
+    const percentageX = mouseMovement.x / 10;
+    const percentageY = mouseMovement.y / 10;
+
+    const targetAngleX = -maxAngleX/30 * percentageX;
+    const targetAngleY = -maxAngleY/30 * percentageY;
+
+    const currentRotation = playerBodyMesh.current.quaternion.clone();
+    
+    const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
+    const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
+
+    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
+
+    playerBodyMesh.current.setRotationFromQuaternion(currentRotation);
+};
+
+
 function updateCamPos(state,delta,playerBody){
     const idealOffset = new THREE.Vector3(0,6,8);
     idealOffset.applyQuaternion(playerBody.quaternion);
@@ -30,7 +56,6 @@ document.onmousemove = (e) => {
     mouseMovementY = (e.clientY - window.innerHeight/2)/(window.innerHeight/2);
 }
 function getMouseMovement(){
-    // console.log(mouseMovementX,mouseMovementY);
     return {x:mouseMovementX,y:mouseMovementY};
 }
 const PlayerInput = () => {
@@ -102,11 +127,18 @@ const PlayerInput = () => {
         }
         const forwardBackwardDistance = velocity.forward_backward ;
         const leftRightDistance = velocity.left_right ;
-        playerBody.position.x += leftRightDistance;
-        playerBody.position.z -= forwardBackwardDistance;
+        const normalVector = new THREE.Vector3(leftRightDistance, 0, -forwardBackwardDistance);
+        normalVector.applyQuaternion(playerBody.quaternion);
+        normalVector.add(playerBody.position);
+        playerBody.position.copy(normalVector);
+        // playerBody.position.x += leftRightDistance;
+        // playerBody.position.z -= forwardBackwardDistance;
+
+
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
+        rotateModelAccordingToMouse(state,playerBodyMesh);
         const forwardBackwardVector = new THREE.Vector3(0, 0, -forwardBackwardDistance);
         const leftRightVector = new THREE.Vector3(-leftRightDistance, 0, 0);
         const facingNormal = getFacingNormal();
