@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-public/hdris
+public/hdris/other
 public/models
 src/assets/hdris
 # Editor directories and files
