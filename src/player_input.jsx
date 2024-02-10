@@ -45,7 +45,7 @@ const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
     }
 };
 function Model({ envMap }) {
-    const gltf = useGLTF('models/other/swordfish2.glb');
+    const gltf = useGLTF('models/swordfish.glb');
     const model = gltf.scene;
     console.log(model)
     model.traverse((child) => {
