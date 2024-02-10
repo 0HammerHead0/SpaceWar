@@ -33,8 +33,9 @@ export default function Experience() {
                 <Plane position={[0,-0.3,0]}scale={10} rotation={[-Math.PI/2,0,0]}/>
             </RigidBody> */}
         </Physics>
+        {/* <ambientLight intensity={0} castShadow frustumCulled/> */}
         <Environment files="hdris/nebula_n0.hdr" background/>
-        <OrbitControls/>
+        {/* <OrbitControls/> */}
         {/* <EffectComposer> */}
             {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}
         {/* </EffectComposer> */}

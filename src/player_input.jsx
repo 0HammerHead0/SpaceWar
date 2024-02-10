@@ -39,8 +39,6 @@ const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
     currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
 
     playerBodyMesh.current.setRotationFromQuaternion(currentRotation);
-
-    // Check if rotation is close to zero, then reset cumulative rotations
     if (Math.abs(targetAngleX) < rotationThreshold && Math.abs(targetAngleY) < rotationThreshold) {
         cumulativeRotationX = 0;
         cumulativeRotationY = 0;
@@ -177,14 +175,16 @@ const PlayerInput = () => {
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
-        // if(modelMoving)
+        if(modelMoving)
             rotateModelAccordingToMouse(state,delta,playerBodyMesh);
     });
     return <>
     <mesh ref={playerBodyMesh} scale={0.7 } >
         {/* <boxGeometry />
         <meshStandardMaterial roughness={0.1} metalness={0.5} side={THREE.DoubleSide}/> */}
-        <Model/>
+        {/* <RigidBody type={'dynamic'} colliders={'cuboid'}> */}
+            <Model/>
+        {/* </RigidBody> */}
     </mesh>
     </>
 };

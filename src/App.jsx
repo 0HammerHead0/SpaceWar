@@ -23,8 +23,8 @@ function App() {
   return (
     <>
       <Canvas 
-        onCreated={state => {
-          state.gl.toneMapping = THREE.ReinhardToneMapping }}
+        // onCreated={state => {
+        //   state.gl.toneMapping = THREE.ReinhardToneMapping }}
           shadows
           gl={{
             preserveDrawingBuffer: true,
