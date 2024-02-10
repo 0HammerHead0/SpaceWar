@@ -45,12 +45,17 @@ const rotateModelAccordingToMouse = (state,delta, playerBodyMesh) => {
     }
 };
 function Model({ envMap }) {
-    const gltf = useGLTF('models/swordfish.glb');
+    const gltf = useGLTF('models/other/swordfish2.glb');
     const model = gltf.scene;
+    console.log(model)
     model.traverse((child) => {
         child.castShadow = true;
         child.receiveShadow = true;
-
+        if(child.name=='rest-thruster'){
+            child.material.emissiveIntensity = 100;
+            child.material.emissive = new THREE.Color(0x0000ff);
+            console.log(child.material)
+        }
     });
     return <primitive object={gltf.scene} />;
   }

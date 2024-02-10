@@ -32,7 +32,7 @@ export default function Experience() {
                 <Plane position={[0,-0.3,0]}scale={10} rotation={[-Math.PI/2,0,0]}/>
             </RigidBody> */}
         </Physics>
-        {/* <ambientLight intensity={0} castShadow frustumCulled/> */}
+        <ambientLight intensity={0} frustumCulled/>
         <Environment map={envMap} background />
         {/* <OrbitControls/> */}
         {/* <EffectComposer> */}
