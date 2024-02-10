@@ -13,8 +13,7 @@ import { gsap } from 'gsap';
 import PlayerInput from './player_input';
 
 export default function Experience() {
-    useEffect(() => {
-    }, []);
+    const envMap = useEnvironment({path: "hdris/pngs"});
     return(
         <>
         <axesHelper args={[2]} />
@@ -34,7 +33,7 @@ export default function Experience() {
             </RigidBody> */}
         </Physics>
         {/* <ambientLight intensity={0} castShadow frustumCulled/> */}
-        <Environment files="hdris/nebula_n0.hdr" background/>
+        <Environment map={envMap} background />
         {/* <OrbitControls/> */}
         {/* <EffectComposer> */}
             {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}
