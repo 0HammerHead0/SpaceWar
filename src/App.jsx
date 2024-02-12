@@ -27,8 +27,7 @@ function App() {
         //   state.gl.toneMapping = THREE.ReinhardToneMapping }}
           shadows
           gl={{
-            preserveDrawingBuffer: true,
-            precision: 'highp'
+            precision: 'mediump'
         }}
         camera={{ position: [8, 8, 8], fov: 40}}
         >

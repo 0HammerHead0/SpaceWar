@@ -21,13 +21,13 @@ const velocityMax  = {forward_backward:0.1,left_right:0.05};
 const maxAngleX = Math.PI/4;
 const maxAngleY = Math.PI/6;
 
-const rotateModelAccordingToMouse = (state,delta,playerBodyMesh) => {
+const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
     const mouseMovement = getMouseMovement();
     const percentageX = mouseMovement.x;
     const percentageY = mouseMovement.y;
 
-    let targetAngleX = -maxAngleX * percentageX * delta * Math.sqrt(velocity.left_right/velocityMax.left_right);
-    let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * Math.sqrt(velocity.forward_backward/velocityMax.forward_backward);
+    let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
+    let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
     const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
@@ -188,7 +188,7 @@ const PlayerInput = () => {
         updateCamLookAt(state,delta,playerBody);
         getMouseMovement();
         if(modelMoving)
-            rotateModelAccordingToMouse(state,delta,playerBodyMesh);
+            rotateModelAccordingToMouse(delta,playerBodyMesh);
     });
     return <>
     <mesh ref={playerBodyMesh} scale={0.7 } >
