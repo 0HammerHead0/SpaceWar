@@ -33,7 +33,7 @@ const rotateModelAccordingToMouse = (state,delta,playerBodyMesh) => {
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
     const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
 
-    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);\
+    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
     playerBodyMesh.current.quaternion.copy(currentRotation);
 };
 const factor = 2;
