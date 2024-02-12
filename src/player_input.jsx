@@ -6,11 +6,17 @@ import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 
+const localAxes = {
+    x: new THREE.Vector3(),
+    y: new THREE.Vector3(),
+    z: new THREE.Vector3(),
+};
+
 var rotation_ = new THREE.Quaternion();
 const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
-const vecotityMax  = {forward_backward:0.1,left_right:0.05};
+const velocityMax  = {forward_backward:0.1,left_right:0.05};
 
 const maxAngleX = Math.PI/4;
 const maxAngleY = Math.PI/6;
@@ -20,52 +26,36 @@ const rotateModelAccordingToMouse = (state,delta,playerBodyMesh) => {
     const percentageX = mouseMovement.x;
     const percentageY = mouseMovement.y;
 
-    let targetAngleX = -maxAngleX * percentageX * delta;
-    let targetAngleY = -maxAngleY* percentageY * delta;
-    const currentRotation = rotation_.clone();
+    let targetAngleX = -maxAngleX * percentageX * delta * Math.sqrt(velocity.left_right/velocityMax.left_right);
+    let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * Math.sqrt(velocity.forward_backward/velocityMax.forward_backward);
+    const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
     const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
 
-    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
-    
-    const t = 1.0 - Math.pow(0.001, delta);
-    // rotation_.slerp(currentRotation, t);
-    rotation_.copy(currentRotation);
+    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);\
+    playerBodyMesh.current.quaternion.copy(currentRotation);
 };
-const oldRightVector = new THREE.Vector3(1, 0, -0.0);
-const newRightVector = new THREE.Vector3(1,0.005,-0.0);
-const oldLeftVector = new THREE.Vector3(-1, 0, -0.0);
-const newLeftVector = new THREE.Vector3(-1,0.005,-0.0);
-
-const rotationRightAngle = Math.acos(oldRightVector.normalize().dot(newRightVector.normalize()));
-const rotationLeftAngle = Math.acos(oldLeftVector.normalize().dot(newLeftVector.normalize()));
 const factor = 2;
 
+const oldRightVector = new THREE.Vector3(1, 0, 0);
+const newRightVector = new THREE.Vector3(1,0.008,0);
+
+const oldLeftVector = new THREE.Vector3(-1, 0, 0);
+const newLeftVector = new THREE.Vector3(-1,0.008,0);
+
 const rotateObjectTowardsRight = (object) => {
-    const quaternionClone = rotation_.clone();
-    const localOldRightVector = oldRightVector.clone().applyQuaternion(quaternionClone).normalize();
-    const localNewRightVector = newRightVector.clone().applyQuaternion(quaternionClone).normalize();
-    const dotProductRight = localOldRightVector.dot(localNewRightVector);
-    const localRotationRightAngle = factor * Math.acos(THREE.MathUtils.clamp(dotProductRight, -1, 1));
-    const axisToRotateAboutRight = new  THREE.Vector3().crossVectors(localOldRightVector, localNewRightVector).normalize();
-    // console.log(axisToRotateAboutRight)
-    const rotationRightQuaternion = new THREE.Quaternion().setFromAxisAngle(axisToRotateAboutRight, localRotationRightAngle);
-    // console.log(rotationRightQuaternion);
-    rotation_.copy(rotation_.multiply(rotationRightQuaternion));
+    const localOldRightVector = oldRightVector.clone().normalize();
+    const localNewRightVector = newRightVector.clone().normalize();
+    const rotationRightQuaternion = new THREE.Quaternion().setFromUnitVectors(localOldRightVector, localNewRightVector)
+    object.quaternion.multiply(rotationRightQuaternion)
 };
 const rotateObjectTowardsLeft = (object) => {
-    const quaternionClone = rotation_.clone();
-    const localOldLeftVector = oldLeftVector.clone().applyQuaternion(quaternionClone).normalize();
-    const localNewLeftVector = newLeftVector.clone().applyQuaternion(quaternionClone).normalize();
-    const dotProductLeft = localOldLeftVector.dot(localNewLeftVector);
-    const localRotationLeftAngle = factor * Math.acos(THREE.MathUtils.clamp(dotProductLeft, -1, 1));
-    const axisToRotateAboutLeft = new  THREE.Vector3().crossVectors(localOldLeftVector, localNewLeftVector).normalize();
-    const rotationLeftQuaternion = new THREE.Quaternion().setFromAxisAngle(axisToRotateAboutLeft, localRotationLeftAngle);
-    rotation_.copy(rotation_.multiply(rotationLeftQuaternion));
+    const localOldLeftVector = oldLeftVector.clone().normalize();
+    const localNewLeftVector = newLeftVector.clone().normalize();
+    const rotationLeftQuaternion = new THREE.Quaternion().setFromUnitVectors(localOldLeftVector, localNewLeftVector)
+    object.quaternion.multiply(rotationLeftQuaternion);
 };
-
-
 
 function Model({ envMap }) {
     const gltf = useGLTF('models/swordfish.glb');
@@ -106,9 +96,6 @@ function getMouseMovement(){
 }
 const PlayerInput = () => {
     const playerBodyMesh = useRef();
-    const zLine = useRef();
-    const xLine = useRef();
-    const yLine = useRef();
     const [keysState, setKeysState] = useState({
         W: false,Shift:false,w:false, A: false, a:false, S: false, s:false, D: false ,d:false
     });
@@ -116,77 +103,41 @@ const PlayerInput = () => {
         const handleKeyDown = (event) => {
         setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: true }));
         };
-
+        
         const handleKeyUp = (event) => {
-        setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: false }));
+            setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: false }));
         };
-
+        
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
-
+        
         return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
         };
     }, []);
     useFrame((state, delta) => {
         const playerBody = playerBodyMesh.current;
-        playerBody.quaternion.copy(rotation_);
-        const localAxes = {
-            x: new THREE.Vector3(),
-            y: new THREE.Vector3(),
-            z: new THREE.Vector3(),
-          };
-        playerBody.matrixWorld.extractBasis(localAxes.x, localAxes.y, localAxes.z);
-        console.log(localAxes.x,localAxes.y,localAxes.z)
-        const zLineRef = zLine.current;
-        const xLineRef = xLine.current;
-        const rightVector = new THREE.Vector3(1, 0, 0);
-        const leftVector = new THREE.Vector3(-1, 0, 0);
-        zLineRef.position.copy(playerBody.position);
-        zLineRef.quaternion.copy(playerBody.quaternion);
-        zLineRef.lookAt(
-          new THREE.Vector3().copy(playerBody.position).add(localAxes.z)
-        );
-      
-        // Update xLineRef position and rotation
-        xLineRef.position.copy(playerBody.position);
-        xLineRef.quaternion.copy(playerBody.quaternion);
-        xLineRef.lookAt(
-          new THREE.Vector3().copy(playerBody.position).add(localAxes.x.negate())
-        );
-        // console.log(zLineRef.quaternion);
-
-        // Update yLineRef position and rotation
-        yLine.current.position.copy(playerBody.position);
-        yLine.current.quaternion.copy(playerBody.quaternion);
-        yLine.current.lookAt(
-          new THREE.Vector3().copy(playerBody.position).add(localAxes.y)
-        );
-        
-    })
-    useFrame((state, delta) => {
-        const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(keysState.w || keysState.W){
-            if(velocity.forward_backward<vecotityMax.forward_backward)
+            if(velocity.forward_backward<velocityMax.forward_backward)
                 velocity.forward_backward += acceleration.forward_backward * delta;
             modelMoving = true;
         }
         if(keysState.s || keysState.S){
-            if(velocity.forward_backward>-vecotityMax.forward_backward)
+            if(velocity.forward_backward>-velocityMax.forward_backward)
             velocity.forward_backward -= acceleration.forward_backward * delta;
             modelMoving = true;
         }
         if(keysState.a || keysState.A){
-            if(velocity.left_right>-vecotityMax.left_right){
+            if(velocity.left_right>-velocityMax.left_right){
                 velocity.left_right -= acceleration.left_right * delta;
             }
             rotateObjectTowardsRight(playerBody);
             modelMoving = true;
         }
         if(keysState.d || keysState.D){
-            if(velocity.left_right<vecotityMax.left_right){
+            if(velocity.left_right<velocityMax.left_right){
                 velocity.left_right += acceleration.left_right * delta;
             }
             rotateObjectTowardsLeft(playerBody);
@@ -231,8 +182,6 @@ const PlayerInput = () => {
         normalVector.applyQuaternion(playerBody.quaternion);
         normalVector.add(playerBody.position);
         playerBody.position.copy(normalVector);
-        // playerBody.position.x += leftRightDistance;
-        // playerBody.position.z -= forwardBackwardDistance;
 
 
         updateCamPos(state,delta,playerBody);
@@ -249,15 +198,6 @@ const PlayerInput = () => {
             <Model/>
         {/* </RigidBody> */}
     </mesh>
-    <Box ref={zLine} args={[0.03, 0.03, 6]} position={[0.5, 0, 0]}>
-        <meshStandardMaterial color={'red'}/>
-    </Box>
-    <Box ref={xLine} args={[0.03, 0.03, 4]} position={[-0.5, 0, 0]}>
-        <meshStandardMaterial color={'blue'}/>
-    </Box>
-    <Box ref={yLine} args={[0.03, 0.03, 6]} position={[0, 0, 0.5]}>
-        <meshStandardMaterial color={'green'}/>
-    </Box>
     </>
 };
 
