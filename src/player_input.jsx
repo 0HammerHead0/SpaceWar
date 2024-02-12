@@ -6,13 +6,6 @@ import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 
-const localAxes = {
-    x: new THREE.Vector3(),
-    y: new THREE.Vector3(),
-    z: new THREE.Vector3(),
-};
-
-var rotation_ = new THREE.Quaternion();
 const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
@@ -96,8 +89,36 @@ function getMouseMovement(){
 }
 const PlayerInput = () => {
     const playerBodyMesh = useRef();
+    const [xL, setXL] = useState(0);
+    const [yL, setYL] = useState(0);
+    const [xR, setXR] = useState(0);
+    const [yR, setYR] = useState(0);
+    const [rightTrigger, setRightTrigger] = useState(0);
+    const [leftTrigger, setLeftTrigger] = useState(0);
+    const [aPressed, setAPressed] = useState(false);
+    const [bPressed, setBPressed] = useState(false);
+    const [xPressed, setXPressed] = useState(false);
+    const [yPressed, setYPressed] = useState(false);
     const [keysState, setKeysState] = useState({
         W: false,Shift:false,w:false, A: false, a:false, S: false, s:false, D: false ,d:false
+    });
+    useFrame(() => {
+        // const interval = setInterval(() => {
+            const gamepad = navigator.getGamepads()[0];
+            if (gamepad) {
+                setXL(gamepad.axes[0]);
+                setYL(gamepad.axes[1]);
+                setXR(gamepad.axes[2]);
+                setYR(gamepad.axes[3]);
+                setRightTrigger(gamepad.buttons[7].value);
+                setLeftTrigger(gamepad.buttons[6].value);
+                setAPressed(gamepad.buttons[0].pressed);
+                setBPressed(gamepad.buttons[1].pressed);
+                setXPressed(gamepad.buttons[2].pressed);
+                setYPressed(gamepad.buttons[3].pressed);
+            }
+        // }, 100);
+        // return () => clearInterval(interval);
     });
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -115,66 +136,97 @@ const PlayerInput = () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, []);
+    }, [velocity]);
     useFrame((state, delta) => {
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
-        if(keysState.w || keysState.W){
-            if(velocity.forward_backward<velocityMax.forward_backward)
-                velocity.forward_backward += acceleration.forward_backward * delta;
-            modelMoving = true;
-        }
-        if(keysState.s || keysState.S){
-            if(velocity.forward_backward>-velocityMax.forward_backward)
-            velocity.forward_backward -= acceleration.forward_backward * delta;
-            modelMoving = true;
-        }
-        if(keysState.a || keysState.A){
-            if(velocity.left_right>-velocityMax.left_right){
-                velocity.left_right -= acceleration.left_right * delta;
-            }
-            rotateObjectTowardsRight(playerBody);
-            modelMoving = true;
-        }
-        if(keysState.d || keysState.D){
-            if(velocity.left_right<velocityMax.left_right){
-                velocity.left_right += acceleration.left_right * delta;
-            }
-            rotateObjectTowardsLeft(playerBody);
-            modelMoving = true;
-        }
-        // deceleration
-        if (!keysState.w && !keysState.W) {
-            if (velocity.forward_backward > 0) {
-                velocity.forward_backward -= deceleration.forward_backward * delta;
+        if(!navigator.getGamepads()[0]){
+            console.log('No gamepad found');
+            if(keysState.w || keysState.W){
+                if(velocity.forward_backward<velocityMax.forward_backward)
+                    velocity.forward_backward += acceleration.forward_backward * delta;
                 modelMoving = true;
-                if(velocity.forward_backward<0.0000005)
-                    velocity.forward_backward = 0;
+            }
+            if(keysState.s || keysState.S){
+                if(velocity.forward_backward>-velocityMax.forward_backward)
+                velocity.forward_backward -= acceleration.forward_backward * delta;
+                modelMoving = true;
+            }
+            if(keysState.a || keysState.A){
+                if(velocity.left_right>-velocityMax.left_right){
+                    velocity.left_right -= acceleration.left_right * delta;
+                }
+                rotateObjectTowardsRight(playerBody);
+                modelMoving = true;
+            }
+            if(keysState.d || keysState.D){
+                if(velocity.left_right<velocityMax.left_right){
+                    velocity.left_right += acceleration.left_right * delta;
+                }
+                rotateObjectTowardsLeft(playerBody);
+                modelMoving = true;
+            }
+            // deceleration
+            if (!keysState.w && !keysState.W) {
+                if (velocity.forward_backward > 0) {
+                    velocity.forward_backward -= deceleration.forward_backward * delta;
+                    modelMoving = true;
+                    if(velocity.forward_backward<0.0000005)
+                        velocity.forward_backward = 0;
+                }
+            }
+            if (!keysState.s && !keysState.S) {
+                if (velocity.forward_backward < 0) {
+                    velocity.forward_backward += deceleration.forward_backward * delta;
+                    modelMoving = true;
+                    if(velocity.forward_backward>-0.0000005)
+                        velocity.forward_backward = 0;
+                }
+            }
+            if (!keysState.a && !keysState.A) {
+                if (velocity.left_right > 0) {
+                    modelMoving = true;
+                    velocity.left_right -= deceleration.left_right * delta;
+                    if(velocity.left_right<0.0000005)
+                        velocity.left_right = 0;
+                }
+            }
+            if (!keysState.d && !keysState.D) {
+                if (velocity.left_right < 0) {
+                    modelMoving = true;
+                    velocity.left_right += deceleration.left_right * delta;
+                    if(velocity.left_right>-0.0000005)
+                        velocity.left_right = 0;
+                }
             }
         }
-        if (!keysState.s && !keysState.S) {
-            if (velocity.forward_backward < 0) {
-                velocity.forward_backward += deceleration.forward_backward * delta;
-                modelMoving = true;
-                if(velocity.forward_backward>-0.0000005)
-                    velocity.forward_backward = 0;
+        else{
+            // forward_backward
+            if(Math.abs(yR)>0.000001){
+                if(Math.abs(velocity.forward_backward)<=velocityMax.forward_backward){
+                    velocity.forward_backward+=acceleration.forward_backward
+                    velocity.forward_backward*=yR;
+                    modelMoving = true;
+                }
             }
-        }
-        if (!keysState.a && !keysState.A) {
-            if (velocity.left_right > 0) {
-                modelMoving = true;
-                velocity.left_right -= deceleration.left_right * delta;
-                if(velocity.left_right<0.0000005)
-                    velocity.left_right = 0;
+            else{
+                if (velocity.forward_backward < 0) {
+                    velocity.forward_backward += deceleration.forward_backward * delta;
+                    modelMoving = true;
+                    console.log('decreasing from -ve')
+                    if(velocity.forward_backward>-0.0000005)
+                        velocity.forward_backward = 0;
+                }
+                else if (velocity.forward_backward > 0) {
+                    velocity.forward_backward -= deceleration.forward_backward * delta;
+                    modelMoving = true;
+                    console.log('decreasing from +ve')
+                    if(velocity.forward_backward<0.0000005)
+                        velocity.forward_backward = 0;
+                }
+
             }
-        }
-        if (!keysState.d && !keysState.D) {
-            if (velocity.left_right < 0) {
-                modelMoving = true;
-                velocity.left_right += deceleration.left_right * delta;
-                if(velocity.left_right>-0.0000005)
-                    velocity.left_right = 0;
-            }
+            console.log(velocity)
         }
         const forwardBackwardDistance = velocity.forward_backward ;
         const leftRightDistance = velocity.left_right ;
@@ -197,7 +249,9 @@ const PlayerInput = () => {
         {/* <RigidBody type={'dynamic'} colliders={'cuboid'}> */}
             <Model/>
         {/* </RigidBody> */}
+
     </mesh>
+    {/* <PlayerGamepadInput/> */}
     </>
 };
 
