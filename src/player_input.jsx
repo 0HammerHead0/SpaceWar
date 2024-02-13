@@ -151,7 +151,7 @@ const PlayerInput = () => {
     });
     useEffect(()=>{
         if(gamepad){
-            if(RB){
+            if(RB || LB){
                 startRumble(gamepad);
             }
         }
