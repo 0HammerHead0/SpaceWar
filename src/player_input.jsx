@@ -38,6 +38,17 @@ const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percent
     currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
     playerBodyMesh.current.quaternion.copy(currentRotation);
 }
+const startRumble = (gamepad) => {
+    if (gamepad && gamepad.vibrationActuator) {
+      const rumbleOptions = {
+        startDelay: 0,
+        duration: 200, // Rumble duration in milliseconds
+        strongMagnitude: 0.6,
+        weakMagnitude: 0.6,
+      };
+      gamepad.vibrationActuator.playEffect('dual-rumble', rumbleOptions);
+    }
+  };
 const oldRightVector = new THREE.Vector3(1, 0, 0);
 const newRightVector = new THREE.Vector3(1,2,0);
 const rightCrossVector = new THREE.Vector3().crossVectors(oldRightVector, newRightVector).normalize();
@@ -127,6 +138,14 @@ const PlayerInput = () => {
         }, 10);
         return () => clearInterval(interval);
     });
+    useEffect(()=>{
+        const gamepad = navigator.getGamepads()[0];
+        if(gamepad){
+            if(gamepad.buttons[0].pressed){
+                startRumble(gamepad);
+            }
+        }
+    })
     useEffect(() => {
         const handleKeyDown = (event) => {
         setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: true }));
