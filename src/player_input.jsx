@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 
+
+var gamepad;
 const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
@@ -113,6 +115,8 @@ const PlayerInput = () => {
     const [yR, setYR] = useState(0);
     const [rightTrigger, setRightTrigger] = useState(0);
     const [leftTrigger, setLeftTrigger] = useState(0);
+    const [RB, setRB] = useState(false);
+    const [LB, setLB] = useState(false);
     const [aPressed, setAPressed] = useState(false);
     const [bPressed, setBPressed] = useState(false);
     const [xPressed, setXPressed] = useState(false);
@@ -122,7 +126,7 @@ const PlayerInput = () => {
     });
     useEffect(() => {
         const interval = setInterval(() => {
-            const gamepad = navigator.getGamepads()[0];
+            gamepad = navigator.getGamepads()[0];
             if (gamepad) {
                 setXL(-gamepad.axes[0]);
                 setYL(gamepad.axes[1]);
@@ -134,14 +138,20 @@ const PlayerInput = () => {
                 setBPressed(gamepad.buttons[1].pressed);
                 setXPressed(gamepad.buttons[2].pressed);
                 setYPressed(gamepad.buttons[3].pressed);
+                setRB(gamepad.buttons[5].pressed);
+                setLB(gamepad.buttons[4].pressed);
             }
+            gamepad.buttons.forEach((button, index) => {
+                if (button.pressed) {
+                    console.log(`Button ${index} pressed`);
+                }
+            });
         }, 10);
         return () => clearInterval(interval);
     });
     useEffect(()=>{
-        const gamepad = navigator.getGamepads()[0];
         if(gamepad){
-            if(gamepad.buttons[0].pressed){
+            if(RB){
                 startRumble(gamepad);
             }
         }
