@@ -21,19 +21,15 @@ const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
 
     let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
     let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
-    console.log(percentageX,percentageY,targetAngleX,targetAngleY);
-    const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
     const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
 
-    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
-    playerBodyMesh.current.quaternion.copy(currentRotation);
+    playerBodyMesh.current.quaternion.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
 };
 const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percentageY) => {
     let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
     let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
-    console.log(percentageX,percentageY,targetAngleX,targetAngleY);
     const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
@@ -152,7 +148,6 @@ const PlayerInput = () => {
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
-            console.log('No gamepad found');
             if(keysState.w || keysState.W){
                 if(velocity.forward_backward<velocityMax.forward_backward)
                     velocity.forward_backward += acceleration.forward_backward * delta;
@@ -264,14 +259,12 @@ const PlayerInput = () => {
                 if (velocity.left_right < 0) {
                     velocity.left_right += deceleration.left_right * delta;
                     modelMoving = true;
-                    console.log('decreasing from -ve')
                     if(velocity.left_right>-0.0000005)
                         velocity.left_right = 0;
                 }
                 else if (velocity.left_right > 0) {
                     velocity.left_right -= deceleration.left_right * delta;
                     modelMoving = true;
-                    console.log('decreasing from +ve')
                     if(velocity.left_right<0.0000005)
                         velocity.left_right = 0;
                 }
@@ -288,7 +281,6 @@ const PlayerInput = () => {
         normalVector.applyQuaternion(playerBody.quaternion);
         normalVector.add(playerBody.position);
         playerBody.position.copy(normalVector);
-
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
     });
