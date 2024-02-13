@@ -21,6 +21,7 @@ const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
 
     let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
     let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
+    console.log(percentageX,percentageY,targetAngleX,targetAngleY);
     const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
@@ -29,24 +30,34 @@ const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
     currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
     playerBodyMesh.current.quaternion.copy(currentRotation);
 };
-const factor = 2;
+const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percentageY) => {
+    let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
+    let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
+    console.log(percentageX,percentageY,targetAngleX,targetAngleY);
+    const currentRotation = playerBodyMesh.current.quaternion.clone();
 
+    const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
+    const rotationQuaternionY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetAngleY);
+    
+    currentRotation.multiply(rotationQuaternionX).multiply(rotationQuaternionY);
+    playerBodyMesh.current.quaternion.copy(currentRotation);
+}
 const oldRightVector = new THREE.Vector3(1, 0, 0);
-const newRightVector = new THREE.Vector3(1,0.008,0);
+const newRightVector = new THREE.Vector3(1,2,0);
+const rightCrossVector = new THREE.Vector3().crossVectors(oldRightVector, newRightVector).normalize();
+const leftAngle = oldRightVector.angleTo(newRightVector);
 
 const oldLeftVector = new THREE.Vector3(-1, 0, 0);
-const newLeftVector = new THREE.Vector3(-1,0.008,0);
+const newLeftVector = new THREE.Vector3(-1,2,0);
+const leftCrossVector = new THREE.Vector3().crossVectors(oldLeftVector, newLeftVector).normalize();
+const rightAngle = oldLeftVector.angleTo(newLeftVector);
 
-const rotateObjectTowardsRight = (object) => {
-    const localOldRightVector = oldRightVector.clone().normalize();
-    const localNewRightVector = newRightVector.clone().normalize();
-    const rotationRightQuaternion = new THREE.Quaternion().setFromUnitVectors(localOldRightVector, localNewRightVector)
+const rotateObjectTowardsRight = (object,factor,delta) => {
+    const rotationRightQuaternion = new THREE.Quaternion().setFromAxisAngle(rightCrossVector, leftAngle*factor*delta);
     object.quaternion.multiply(rotationRightQuaternion)
 };
-const rotateObjectTowardsLeft = (object) => {
-    const localOldLeftVector = oldLeftVector.clone().normalize();
-    const localNewLeftVector = newLeftVector.clone().normalize();
-    const rotationLeftQuaternion = new THREE.Quaternion().setFromUnitVectors(localOldLeftVector, localNewLeftVector)
+const rotateObjectTowardsLeft = (object,factor,delta) => {
+    const rotationLeftQuaternion = new THREE.Quaternion().setFromAxisAngle(leftCrossVector, rightAngle*factor*delta);
     object.quaternion.multiply(rotationLeftQuaternion);
 };
 
@@ -102,11 +113,11 @@ const PlayerInput = () => {
     const [keysState, setKeysState] = useState({
         W: false,Shift:false,w:false, A: false, a:false, S: false, s:false, D: false ,d:false
     });
-    useFrame(() => {
-        // const interval = setInterval(() => {
+    useEffect(() => {
+        const interval = setInterval(() => {
             const gamepad = navigator.getGamepads()[0];
             if (gamepad) {
-                setXL(gamepad.axes[0]);
+                setXL(-gamepad.axes[0]);
                 setYL(gamepad.axes[1]);
                 setXR(gamepad.axes[2]);
                 setYR(gamepad.axes[3]);
@@ -117,8 +128,8 @@ const PlayerInput = () => {
                 setXPressed(gamepad.buttons[2].pressed);
                 setYPressed(gamepad.buttons[3].pressed);
             }
-        // }, 100);
-        // return () => clearInterval(interval);
+        }, 10);
+        return () => clearInterval(interval);
     });
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -156,14 +167,14 @@ const PlayerInput = () => {
                 if(velocity.left_right>-velocityMax.left_right){
                     velocity.left_right -= acceleration.left_right * delta;
                 }
-                rotateObjectTowardsRight(playerBody);
+                rotateObjectTowardsRight(playerBody,1,delta);
                 modelMoving = true;
             }
             if(keysState.d || keysState.D){
                 if(velocity.left_right<velocityMax.left_right){
                     velocity.left_right += acceleration.left_right * delta;
                 }
-                rotateObjectTowardsLeft(playerBody);
+                rotateObjectTowardsLeft(playerBody,1,delta);
                 modelMoving = true;
             }
             // deceleration
@@ -199,34 +210,77 @@ const PlayerInput = () => {
                         velocity.left_right = 0;
                 }
             }
+            if(modelMoving){
+                getMouseMovement();
+                rotateModelAccordingToMouse(delta,playerBodyMesh);
+            }
         }
         else{
             // forward_backward
-            if(Math.abs(yR)>0.000001){
-                if(Math.abs(velocity.forward_backward)<=velocityMax.forward_backward){
-                    velocity.forward_backward+=acceleration.forward_backward
-                    velocity.forward_backward*=yR;
+            if(Math.abs(yL)>0.0001){
+                if(yL < 0){ // forward
+                    if(velocity.forward_backward< -yL*velocityMax.forward_backward)
+                        velocity.forward_backward += acceleration.forward_backward * delta * -yL;
                     modelMoving = true;
+                }
+                else{ // backward
+                    if(velocity.forward_backward> -yL*velocityMax.forward_backward)
+                        velocity.forward_backward += acceleration.forward_backward * delta * -yL;
+                modelMoving = true;
                 }
             }
             else{
                 if (velocity.forward_backward < 0) {
                     velocity.forward_backward += deceleration.forward_backward * delta;
                     modelMoving = true;
-                    console.log('decreasing from -ve')
                     if(velocity.forward_backward>-0.0000005)
                         velocity.forward_backward = 0;
                 }
                 else if (velocity.forward_backward > 0) {
                     velocity.forward_backward -= deceleration.forward_backward * delta;
                     modelMoving = true;
-                    console.log('decreasing from +ve')
                     if(velocity.forward_backward<0.0000005)
                         velocity.forward_backward = 0;
                 }
-
             }
-            console.log(velocity)
+            // left_right
+            if(Math.abs(xL)>0.0001){
+                if(xL < 0){ // left
+                    if(velocity.left_right< -xL*velocityMax.left_right){
+                        velocity.left_right += acceleration.left_right * delta * -xL;
+                        rotateObjectTowardsRight(playerBody,xL,delta);
+                    }
+                    modelMoving = true;
+                }
+                else{ // right
+                    if(velocity.left_right> -xL*velocityMax.left_right){
+                        velocity.left_right += acceleration.left_right * delta * -xL;
+                        rotateObjectTowardsLeft(playerBody,-xL,delta);
+                    }
+                    modelMoving = true;
+                }
+            }
+            else{
+                if (velocity.left_right < 0) {
+                    velocity.left_right += deceleration.left_right * delta;
+                    modelMoving = true;
+                    console.log('decreasing from -ve')
+                    if(velocity.left_right>-0.0000005)
+                        velocity.left_right = 0;
+                }
+                else if (velocity.left_right > 0) {
+                    velocity.left_right -= deceleration.left_right * delta;
+                    modelMoving = true;
+                    console.log('decreasing from +ve')
+                    if(velocity.left_right<0.0000005)
+                        velocity.left_right = 0;
+                }
+            }
+            // right-joystick
+            // x-axis
+            if(Math.abs(xR)>0.0001 || Math.abs(yR)>0.0001){
+                rotateModelAccordingToJoystick(delta,playerBodyMesh,xR,yR);
+            }
         }
         const forwardBackwardDistance = velocity.forward_backward ;
         const leftRightDistance = velocity.left_right ;
@@ -235,12 +289,8 @@ const PlayerInput = () => {
         normalVector.add(playerBody.position);
         playerBody.position.copy(normalVector);
 
-
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
-        getMouseMovement();
-        if(modelMoving)
-            rotateModelAccordingToMouse(delta,playerBodyMesh);
     });
     return <>
     <mesh ref={playerBodyMesh} scale={0.7 } >
