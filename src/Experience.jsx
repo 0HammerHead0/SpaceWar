@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useFrame, useThree, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, useLoader } from '@react-three/fiber';
 import { FirstPersonControls,OrbitControls,  useGLTF, Text, Environment, AdaptiveDpr, BakeShadows, PerformanceMonitor, MeshReflectorMaterial, useEnvironment } from '@react-three/drei';
 import { EffectComposer, Bloom, DepthOfField, Vignette, DotScreen, Noise, SSAO, SMAA, GodRays, FXAA, Sepia, SelectiveBloom, ShockWave, HueSaturation, Scanline, Autofocus, LensFlare } from '@react-three/postprocessing';
 import * as THREE from 'three';
@@ -14,8 +14,30 @@ import PlayerInput from './player_input';
 
 export default function Experience() {
     const envMap = useEnvironment({path: "hdris/pngs"});
+    useEffect(() => {
+      const handleResize = () => {
+        const canvas = document.querySelector('Canvas');
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+      };
+  
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+      
+    }, []);
+  
     return(
-        <>
+        <Canvas
+            // onCreated={state => {
+          //   state.gl.toneMapping = THREE.ReinhardToneMapping }}
+          shadows
+          gl={{
+            precision: 'mediump'
+        }}
+        camera={{ position: [8, 8, 8], fov: 40}}
+        >
         <axesHelper args={[2]} />
         <Physics
             gravity={[0, 0, 0]}
@@ -38,6 +60,6 @@ export default function Experience() {
         {/* <EffectComposer> */}
             {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}
         {/* </EffectComposer> */}
-        </>
+        </Canvas>
     )
 }

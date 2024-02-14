@@ -5,9 +5,12 @@ import {math} from './math.js';
 import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
-
+import {functions} from './functions.js';
 
 var gamepad;
+var ws;
+var mouseMovementX;
+var mouseMovementY;
 const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.1,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
@@ -15,6 +18,17 @@ const velocityMax  = {forward_backward:0.1,left_right:0.05};
 
 const maxAngleX = Math.PI/4;
 const maxAngleY = Math.PI/6;
+
+const oldRightVector = new THREE.Vector3(1, 0, 0);
+const newRightVector = new THREE.Vector3(1,2,0);
+const rightCrossVector = new THREE.Vector3().crossVectors(oldRightVector, newRightVector).normalize();
+const leftAngle = oldRightVector.angleTo(newRightVector);
+
+const oldLeftVector = new THREE.Vector3(-1, 0, 0);
+const newLeftVector = new THREE.Vector3(-1,2,0);
+const leftCrossVector = new THREE.Vector3().crossVectors(oldLeftVector, newLeftVector).normalize();
+const rightAngle = oldLeftVector.angleTo(newLeftVector);
+
 
 const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
     const mouseMovement = getMouseMovement();
@@ -51,15 +65,6 @@ const startRumble = (gamepad) => {
       gamepad.vibrationActuator.playEffect('dual-rumble', rumbleOptions);
     }
   };
-const oldRightVector = new THREE.Vector3(1, 0, 0);
-const newRightVector = new THREE.Vector3(1,2,0);
-const rightCrossVector = new THREE.Vector3().crossVectors(oldRightVector, newRightVector).normalize();
-const leftAngle = oldRightVector.angleTo(newRightVector);
-
-const oldLeftVector = new THREE.Vector3(-1, 0, 0);
-const newLeftVector = new THREE.Vector3(-1,2,0);
-const leftCrossVector = new THREE.Vector3().crossVectors(oldLeftVector, newLeftVector).normalize();
-const rightAngle = oldLeftVector.angleTo(newLeftVector);
 
 const rotateObjectTowardsRight = (object,factor,delta) => {
     const rotationRightQuaternion = new THREE.Quaternion().setFromAxisAngle(rightCrossVector, leftAngle*factor*delta);
@@ -82,7 +87,7 @@ function Model({ envMap }) {
         }
     });
     return <primitive object={gltf.scene} />;
-  }
+}
 
 function updateCamPos(state,delta,playerBody){
     const idealOffset = new THREE.Vector3(0,6,8);
@@ -98,8 +103,6 @@ function updateCamLookAt(state,delta,playerBody){
     const t = 1.0 - Math.pow(0.001, delta);
     state.camera.lookAt(state.camera.position.clone().lerp(idealLookAt, t));
 }
-var mouseMovementX;
-var mouseMovementY;
 document.onmousemove = (e) => {
     mouseMovementX = (e.clientX - window.innerWidth/2)/(window.innerWidth/2);
     mouseMovementY = (e.clientY - window.innerHeight/2)/(window.innerHeight/2);
@@ -131,7 +134,7 @@ const PlayerInput = () => {
                 setXL(-gamepad.axes[0]);
                 setYL(gamepad.axes[1]);
                 setXR(gamepad.axes[2]);
-                setYR(gamepad.axes[3]);
+                setYR(-gamepad.axes[3]);
                 setRightTrigger(gamepad.buttons[7].value);
                 setLeftTrigger(gamepad.buttons[6].value);
                 setAPressed(gamepad.buttons[0].pressed);
@@ -141,24 +144,28 @@ const PlayerInput = () => {
                 setRB(gamepad.buttons[5].pressed);
                 setLB(gamepad.buttons[4].pressed);
             }
-            gamepad.buttons.forEach((button, index) => {
-                if (button.pressed) {
-                    console.log(`Button ${index} pressed`);
-                }
-            });
+            // gamepad.buttons.forEach((button, index) => {
+            //     if (button.pressed) {
+            //         console.log(`Button ${index} pressed`);
+            //     }
+            // });
         }, 10);
         return () => clearInterval(interval);
     });
+    useEffect(() => {
+        ws = new WebSocket('ws://localhost:3000');
+    },[]);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
-                startRumble(gamepad);
+               startRumble(gamepad);
+                ws.close();
             }
         }
     })
     useEffect(() => {
         const handleKeyDown = (event) => {
-        setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: true }));
+            setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: true }));
         };
         
         const handleKeyUp = (event) => {
@@ -174,6 +181,17 @@ const PlayerInput = () => {
         };
     }, [velocity]);
     useFrame((state, delta) => {
+        
+        ws.onopen = () => {
+            console.log('connected');
+        };
+        ws.onmessage = message => {
+            const response = JSON.parse(message.data);
+            console.log(response);
+        };
+        ws.onclose = () => {
+            console.log('disconnected');
+        };
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
@@ -322,7 +340,6 @@ const PlayerInput = () => {
         {/* </RigidBody> */}
 
     </mesh>
-    {/* <PlayerGamepadInput/> */}
     </>
 };
 
