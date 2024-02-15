@@ -13,7 +13,7 @@ import { gsap } from 'gsap';
 import PlayerInput from './player_input';
 
 export default function Experience() {
-    const envMap = useEnvironment({path: "hdris/pngs"});
+    const envMap = useEnvironment({path: "../public/hdris/pngs"});
     useEffect(() => {
       const handleResize = () => {
         const canvas = document.querySelector('Canvas');

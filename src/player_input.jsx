@@ -1,14 +1,15 @@
 // WASDMovement.js
 import { useFrame, useThree } from '@react-three/fiber';
+import { useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import {math} from './math.js';
+import {math} from './math.js';      
 import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
 
 var gamepad;
-var ws;
+var socket ;
 var mouseMovementX;
 var mouseMovementY;
 const velocity     = {forward_backward:0,left_right:0};
@@ -76,7 +77,7 @@ const rotateObjectTowardsLeft = (object,factor,delta) => {
 };
 
 function Model({ envMap }) {
-    const gltf = useGLTF('models/swordfish.glb');
+    const gltf = useGLTF('../public/models/swordfish.glb');
     const model = gltf.scene;
     model.traverse((child) => {
         child.castShadow = true;
@@ -111,6 +112,7 @@ function getMouseMovement(){
     return {x:mouseMovementX,y:mouseMovementY};
 }
 const PlayerInput = () => {
+    const { gameID } = useParams();
     const playerBodyMesh = useRef();
     const [xL, setXL] = useState(0);
     const [yL, setYL] = useState(0);
@@ -127,6 +129,15 @@ const PlayerInput = () => {
     const [keysState, setKeysState] = useState({
         W: false,Shift:false,w:false, A: false, a:false, S: false, s:false, D: false ,d:false
     });
+   
+    // useEffect(()=>{
+    //     const data_to_send = {xL, yL, xR, yR, rightTrigger, leftTrigger, RB, LB, aPressed, bPressed, xPressed, yPressed, keysState};
+    //     if (socket) {
+    //         socket.send(JSON.stringify(data_to_send));
+    //     } else {
+    //         console.log("WebSocket connection is not open.");
+    //     }
+    // },[xL,yL,xR,yR,rightTrigger,leftTrigger,RB,LB,aPressed,bPressed,xPressed,yPressed,keysState])
     useEffect(() => {
         const interval = setInterval(() => {
             gamepad = navigator.getGamepads()[0];
@@ -152,14 +163,14 @@ const PlayerInput = () => {
         }, 10);
         return () => clearInterval(interval);
     });
-    useEffect(() => {
-        ws = new WebSocket('ws://localhost:3000');
-    },[]);
+    // useEffect(() => {
+    //     console.log(gameID);
+    //     socket  = new WebSocket("ws://localhost:3000");
+    // },[]);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
                startRumble(gamepad);
-                ws.close();
             }
         }
     })
@@ -182,16 +193,16 @@ const PlayerInput = () => {
     }, [velocity]);
     useFrame((state, delta) => {
         
-        ws.onopen = () => {
-            console.log('connected');
-        };
-        ws.onmessage = message => {
-            const response = JSON.parse(message.data);
-            console.log(response);
-        };
-        ws.onclose = () => {
-            console.log('disconnected');
-        };
+    //    socket.addEventListener('open', function (event) {
+    //     console.log("connection opened");
+    //     });
+    //     socket.addEventListener('message', function (event) {
+    //         const message = JSON.parse(event.data);
+    //     });
+    //     socket.addEventListener('close', function (event) {
+    //         console.log("connection closed");
+    //     });
+
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
