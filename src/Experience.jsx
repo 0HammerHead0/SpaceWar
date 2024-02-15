@@ -13,9 +13,12 @@ import { gsap } from 'gsap';
 import PlayerInput from './player_input';
 
 export default function Experience() {
-    const envMap = useEnvironment({path: "../public/hdris/pngs"});
-    useEffect(() => {
-      const handleResize = () => {
+  const envMap = useEnvironment({path: "../../public/hdris/pngs"});
+  useEffect(() => {
+    console.log('useEffect');
+  },[]);
+  useEffect(() => {
+    const handleResize = () => {
         const canvas = document.querySelector('Canvas');
         canvas.style.width = '100vw';
         canvas.style.height = '100vh';
@@ -27,7 +30,6 @@ export default function Experience() {
       };
       
     }, []);
-  
     return(
         <Canvas
             // onCreated={state => {
@@ -55,7 +57,10 @@ export default function Experience() {
             </RigidBody> */}
         </Physics>
         <ambientLight intensity={1} frustumCulled/>
-        <Environment map={envMap} background />
+        <Environment
+        map={envMap}
+        // map = {null}
+        background />
         {/* <OrbitControls/> */}
         {/* <EffectComposer> */}
             {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}

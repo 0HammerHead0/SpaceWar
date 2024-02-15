@@ -11,14 +11,15 @@ export default function Home() {
   const body = document.querySelector("body");
   var socket;
   var gameID = "";
+  var clientID;
   const navigate = useNavigate();
   function recieveMessage(event) {
     const message = JSON.parse(event.data);
     console.log(message);
     return message;
   }
-  useEffect(() => {
-    socket = new WebSocket("ws://localhost:3000");
+  useEffect(() =>{
+    socket = new WebSocket("ws://localhost:3001");
     return () => {
       socket.close();
     };
@@ -27,14 +28,24 @@ export default function Home() {
     const handleOpen = (event) => {
       console.log("connection opened home page");
     };
-
     const handleMessage = (event) => {
       message = JSON.parse(event.data);
+      console.log(message);
       if (message.method === "connectGame") {
         gameID = message.gameID;
+        clientID = message.clientID;
         console.log("connected to game", message.gameID);
         console.log(message);
-        navigate(`/experience/${gameID}`);
+        navigate(`/experience/${gameID}/${clientID}`);
+        window.location.reload(true);
+      }
+      else if(message.method === "connectGameThroughJoin"){
+        gameID = message.gameID;
+        clientID = message.clientID;
+        console.log("connected to game", message.gameID);
+        console.log(message);
+        navigate(`/experience/${gameID}/${clientID}`);
+        window.location.reload(true);
       }
     };
 
@@ -60,7 +71,6 @@ export default function Home() {
     };
 
     const handleJoinClick = () => {
-      socket.send(JSON.stringify({ method: "joinGame" }));
       inputGameID.current.style.display = "flex";
     };
 
@@ -77,6 +87,8 @@ export default function Home() {
 
     const handleJoinGameClick = () => {
       gameID = inputGameID.current.querySelector("input").value;
+      console.log("join game", gameID);
+      socket.send(JSON.stringify({ method: "joinGame", gameID }));
       // join
     };
 

@@ -1,4 +1,3 @@
-// WASDMovement.js
 import { useFrame, useThree } from '@react-three/fiber';
 import { useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
@@ -7,9 +6,9 @@ import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
-
 var gamepad;
-var socket ;
+var socket;
+var message;
 var mouseMovementX;
 var mouseMovementY;
 const velocity     = {forward_backward:0,left_right:0};
@@ -76,8 +75,8 @@ const rotateObjectTowardsLeft = (object,factor,delta) => {
     object.quaternion.multiply(rotationLeftQuaternion);
 };
 
-function Model({ envMap }) {
-    const gltf = useGLTF('../public/models/swordfish.glb');
+function Model() {
+    const gltf = useGLTF('../../public/models/swordfish.glb');
     const model = gltf.scene;
     model.traverse((child) => {
         child.castShadow = true;
@@ -113,6 +112,7 @@ function getMouseMovement(){
 }
 const PlayerInput = () => {
     const { gameID } = useParams();
+    const { clientID } = useParams();
     const playerBodyMesh = useRef();
     const [xL, setXL] = useState(0);
     const [yL, setYL] = useState(0);
@@ -129,15 +129,10 @@ const PlayerInput = () => {
     const [keysState, setKeysState] = useState({
         W: false,Shift:false,w:false, A: false, a:false, S: false, s:false, D: false ,d:false
     });
-   
-    // useEffect(()=>{
-    //     const data_to_send = {xL, yL, xR, yR, rightTrigger, leftTrigger, RB, LB, aPressed, bPressed, xPressed, yPressed, keysState};
-    //     if (socket) {
-    //         socket.send(JSON.stringify(data_to_send));
-    //     } else {
-    //         console.log("WebSocket connection is not open.");
-    //     }
-    // },[xL,yL,xR,yR,rightTrigger,leftTrigger,RB,LB,aPressed,bPressed,xPressed,yPressed,keysState])
+    var health = 100;
+    var position = [0,0,0];
+    var quaternion = [0,0,0,0];
+    var kills = 0;
     useEffect(() => {
         const interval = setInterval(() => {
             gamepad = navigator.getGamepads()[0];
@@ -163,10 +158,50 @@ const PlayerInput = () => {
         }, 10);
         return () => clearInterval(interval);
     });
-    // useEffect(() => {
-    //     console.log(gameID);
-    //     socket  = new WebSocket("ws://localhost:3000");
-    // },[]);
+    useEffect(() => {
+        console.log(gameID);
+        socket  = new WebSocket("ws://localhost:3000");
+    },[]);
+    useEffect(() => {
+        const handleOpen = (event) => {
+          console.log("connection opened home page");
+        };
+        const handleMessage = (event) => {
+          message = JSON.parse(event.data);
+            if(message.method === "update"){
+                // games[String(gameID)] = {
+                //     numberOfPlayers: 1,
+                //     players: {
+                //         [String(clientID)]:{
+                //         "health": 100,
+                //         "position": [0, 0, 0],
+                //         "quaternion": [0, 0, 0, 0],
+                //         "kills": 0,
+                //         connection: connection,
+                //         }
+                //     }
+                // };
+                // recieved data is of the above form
+                // update the player's position and quaternion
+                // update the player's health
+                // update the player's kills
+                
+            }
+        };
+    
+        const handleClose = (event) => {
+          console.log("connection closed");
+        };
+    
+        socket.addEventListener("open", handleOpen);
+        socket.addEventListener("message", handleMessage);
+        socket.addEventListener("close", handleClose);
+        return () => {
+          socket.removeEventListener("open", handleOpen);
+          socket.removeEventListener("message", handleMessage);
+          socket.removeEventListener("close", handleClose);
+        };
+    }, [socket]);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
@@ -192,17 +227,13 @@ const PlayerInput = () => {
         };
     }, [velocity]);
     useFrame((state, delta) => {
-        
-    //    socket.addEventListener('open', function (event) {
-    //     console.log("connection opened");
-    //     });
-    //     socket.addEventListener('message', function (event) {
-    //         const message = JSON.parse(event.data);
-    //     });
-    //     socket.addEventListener('close', function (event) {
-    //         console.log("connection closed");
-    //     });
-
+        // const broadCastPayload = {
+        //     health,
+        //     position:playerBodyMesh.current.position.toArray(),
+        //     quaternion:playerBodyMesh.current.quaternion.toArray(),
+        //     kills
+        // }
+        // socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
