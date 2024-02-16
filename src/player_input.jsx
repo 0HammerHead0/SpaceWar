@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
+import address from './socketAdd.js';
 var gamepad;
 var socket;
 var message;
@@ -78,14 +79,6 @@ const rotateObjectTowardsLeft = (object,factor,delta) => {
 function Model() {
     const gltf = useGLTF('../../public/models/swordfish.glb');
     const model = gltf.scene;
-    model.traverse((child) => {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if(child.name=='rest-thruster'){
-            child.material.emissiveIntensity = 100;
-            child.material.emissive = new THREE.Color(0x0000ff);
-        }
-    });
     return <primitive object={gltf.scene} />;
 }
 
@@ -111,8 +104,21 @@ function getMouseMovement(){
     return {x:mouseMovementX,y:mouseMovementY};
 }
 const PlayerInput = () => {
+    const [enemyPlayers, setEnemyPlayers] = useState({});
+    const [playerData, setPlayerData] = useState({
+        numberOfPlayers: 1,
+        players: {
+            [String(useParams().clientID)]: {
+                health: 100,
+                position: [0, 0, 0],
+                quaternion: [0, 0, 0, 0],
+                kills: 0,
+            },
+        },
+    });
     const { gameID } = useParams();
     const { clientID } = useParams();
+    var enemyClientID;
     const playerBodyMesh = useRef();
     const [xL, setXL] = useState(0);
     const [yL, setYL] = useState(0);
@@ -155,60 +161,65 @@ const PlayerInput = () => {
             //         console.log(`Button ${index} pressed`);
             //     }
             // });
-        }, 10);
+        }, 100);
         return () => clearInterval(interval);
     });
     useEffect(() => {
         console.log(gameID);
-        socket  = new WebSocket("ws://localhost:3000");
-    },[]);
-    useEffect(() => {
+        // socket  = new WebSocket("wss://localhost:3000");https://7a5d-45-112-146-18.ngrok-free.app/
+        socket = new WebSocket("ws://"+address.slice(6,));
+    // },[]);
+    // useEffect(() => {
         const handleOpen = (event) => {
-          console.log("connection opened home page");
+            console.log("connection opened game page");
         };
         const handleMessage = (event) => {
-          message = JSON.parse(event.data);
-            if(message.method === "update"){
-                // games[String(gameID)] = {
-                //     numberOfPlayers: 1,
-                //     players: {
-                //         [String(clientID)]:{
-                //         "health": 100,
-                //         "position": [0, 0, 0],
-                //         "quaternion": [0, 0, 0, 0],
-                //         "kills": 0,
-                //         connection: connection,
-                //         }
-                //     }
-                // };
-                // recieved data is of the above form
-                // update the player's position and quaternion
-                // update the player's health
-                // update the player's kills
-                
+            message = JSON.parse(event.data);
+            if(message.method === "broadcast"){
+                const {numberOfPlayer,players} = message.games;
+                console.log(players)
+                setPlayerData({
+                    numberOfPlayer,
+                    players: { ...players },
+                });
+                setEnemyPlayers((prevPlayers) => {
+                    const updatedEnemyPlayers = { ...prevPlayers };
+                    for (const clientID_ in players) {
+                        if (clientID_ !== clientID) {
+                            updatedEnemyPlayers[clientID_] = players[clientID_];
+                        }
+                    }
+                    return updatedEnemyPlayers;
+                });
             }
         };
     
         const handleClose = (event) => {
           console.log("connection closed");
         };
-    
+        const handleError = (event) => {
+            console.log("connection error");
+        };
+
         socket.addEventListener("open", handleOpen);
         socket.addEventListener("message", handleMessage);
         socket.addEventListener("close", handleClose);
+        socket.addEventListener("error", handleError);
         return () => {
-          socket.removeEventListener("open", handleOpen);
-          socket.removeEventListener("message", handleMessage);
-          socket.removeEventListener("close", handleClose);
+            socket.removeEventListener("open", handleOpen);
+            socket.removeEventListener("message", handleMessage);
+            socket.removeEventListener("close", handleClose);
+            socket.removeEventListener("error", handleError);
         };
-    }, [socket]);
+    // }, [socket,setEnemyPlayers]);
+    }, []);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
                startRumble(gamepad);
             }
         }
-    })
+    },[LB,RB])
     useEffect(() => {
         const handleKeyDown = (event) => {
             setKeysState((prevKeys) => ({ ...prevKeys, [event.key]: true }));
@@ -227,13 +238,6 @@ const PlayerInput = () => {
         };
     }, [velocity]);
     useFrame((state, delta) => {
-        // const broadCastPayload = {
-        //     health,
-        //     position:playerBodyMesh.current.position.toArray(),
-        //     quaternion:playerBodyMesh.current.quaternion.toArray(),
-        //     kills
-        // }
-        // socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
@@ -372,16 +376,40 @@ const PlayerInput = () => {
         playerBody.position.copy(normalVector);
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
+        // make it limit to 60 times per second
+        if (performance.now() % (1000/60)< 16) {
+            const broadCastPayload = {
+                health,
+                position:playerBody.position.toArray(),
+                quaternion:playerBody.quaternion.toArray(),
+                kills
+            }
+            socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
+        }
     });
     return <>
     <mesh ref={playerBodyMesh} scale={0.7 } >
         {/* <boxGeometry />
         <meshStandardMaterial roughness={0.1} metalness={0.5} side={THREE.DoubleSide}/> */}
         {/* <RigidBody type={'dynamic'} colliders={'cuboid'}> */}
-            <Model/>
+            <Model key={clientID}/>
         {/* </RigidBody> */}
 
     </mesh>
+    {
+        Object.keys(enemyPlayers).map((clientID_) => {
+            const enemyPlayer = enemyPlayers[clientID_];
+            return (
+            <mesh 
+                scale={0.7 }
+                position={new THREE.Vector3().fromArray(enemyPlayer.position)}
+                quaternion={new THREE.Quaternion().fromArray(enemyPlayer.quaternion)}
+            >
+                <Model key={clientID_} />
+            </mesh>
+            )
+        })
+    }
     </>
 };
 

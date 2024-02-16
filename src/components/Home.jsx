@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-
+import address from "../socketAdd.js";
 import "./Home.css";
 export default function Home() {
   const create = useRef();
@@ -19,7 +19,9 @@ export default function Home() {
     return message;
   }
   useEffect(() =>{
-    socket = new WebSocket("ws://localhost:3001");
+    // socket = new WebSocket("ws://localhost:3000");
+    console.log(address.slice(6,))
+    socket = new WebSocket("ws://"+address.slice(6,))
     return () => {
       socket.close();
     };
@@ -30,7 +32,6 @@ export default function Home() {
     };
     const handleMessage = (event) => {
       message = JSON.parse(event.data);
-      console.log(message);
       if (message.method === "connectGame") {
         gameID = message.gameID;
         clientID = message.clientID;
@@ -63,7 +64,7 @@ export default function Home() {
       socket.removeEventListener("message", handleMessage);
       socket.removeEventListener("close", handleClose);
     };
-  }, [socket]);
+  }, []);
   useEffect(() => {
     const handleCreateClick = () => {
       console.log("create game");
