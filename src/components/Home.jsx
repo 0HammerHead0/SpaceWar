@@ -19,9 +19,9 @@ export default function Home() {
     return message;
   }
   useEffect(() =>{
-    // socket = new WebSocket("ws://localhost:3000");
+    socket = new WebSocket("ws://172.16.54.97:3000");
     console.log(address.slice(6,))
-    socket = new WebSocket("ws://"+address.slice(6,))
+    // socket = new WebSocket("ws://"+address.slice(6,))
     return () => {
       socket.close();
     };

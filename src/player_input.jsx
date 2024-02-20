@@ -1,6 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useParams } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import {math} from './math.js';      
 import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
@@ -9,7 +9,7 @@ import {functions} from './functions.js';
 import address from './socketAdd.js';
 var gamepad;
 var socket;
-var message;
+// let message;
 var mouseMovementX;
 var mouseMovementY;
 const velocity     = {forward_backward:0,left_right:0};
@@ -58,7 +58,7 @@ const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percent
 const startRumble = (gamepad) => {
     if (gamepad && gamepad.vibrationActuator) {
       const rumbleOptions = {
-        startDelay: 0,
+        startDelay: 0,  
         duration: 200, // Rumble duration in milliseconds
         strongMagnitude: 0.6,
         weakMagnitude: 0.6,
@@ -78,10 +78,11 @@ const rotateObjectTowardsLeft = (object,factor,delta) => {
 
 function Model() {
     const gltf = useGLTF('../../public/models/swordfish.glb');
-    const model = gltf.scene;
-    return <primitive object={gltf.scene} />;
-}
-
+    const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  
+    return <primitive object={clonedScene} />;
+  }
+  
 function updateCamPos(state,delta,playerBody){
     const idealOffset = new THREE.Vector3(0,6,8);
     idealOffset.applyQuaternion(playerBody.quaternion);
@@ -105,6 +106,7 @@ function getMouseMovement(){
 }
 const PlayerInput = () => {
     const [enemyPlayers, setEnemyPlayers] = useState({});
+    const [enemyIds, setEnemyIds] = useState([]);
     const [playerData, setPlayerData] = useState({
         numberOfPlayers: 1,
         players: {
@@ -139,58 +141,63 @@ const PlayerInput = () => {
     var position = [0,0,0];
     var quaternion = [0,0,0,0];
     var kills = 0;
-    useEffect(() => {
-        const interval = setInterval(() => {
-            gamepad = navigator.getGamepads()[0];
-            if (gamepad) {
-                setXL(-gamepad.axes[0]);
-                setYL(gamepad.axes[1]);
-                setXR(gamepad.axes[2]);
-                setYR(-gamepad.axes[3]);
-                setRightTrigger(gamepad.buttons[7].value);
-                setLeftTrigger(gamepad.buttons[6].value);
-                setAPressed(gamepad.buttons[0].pressed);
-                setBPressed(gamepad.buttons[1].pressed);
-                setXPressed(gamepad.buttons[2].pressed);
-                setYPressed(gamepad.buttons[3].pressed);
-                setRB(gamepad.buttons[5].pressed);
-                setLB(gamepad.buttons[4].pressed);
-            }
-            // gamepad.buttons.forEach((button, index) => {
-            //     if (button.pressed) {
-            //         console.log(`Button ${index} pressed`);
-            //     }
-            // });
-        }, 100);
-        return () => clearInterval(interval);
-    });
+    // useEffect(() => {
+    //     const interval = setInterval(() => {
+    //         gamepad = navigator.getGamepads()[0];
+    //         if (gamepad) {
+    //             setXL(-gamepad.axes[0]);
+    //             setYL(gamepad.axes[1]);
+    //             setXR(gamepad.axes[2]);
+    //             setYR(-gamepad.axes[3]);
+    //             setRightTrigger(gamepad.buttons[7].value);
+    //             setLeftTrigger(gamepad.buttons[6].value);
+    //             setAPressed(gamepad.buttons[0].pressed);
+    //             setBPressed(gamepad.buttons[1].pressed);
+    //             setXPressed(gamepad.buttons[2].pressed);
+    //             setYPressed(gamepad.buttons[3].pressed);
+    //             setRB(gamepad.buttons[5].pressed);
+    //             setLB(gamepad.buttons[4].pressed);
+    //         }
+    //         // gamepad.buttons.forEach((button, index) => {
+    //         //     if (button.pressed) {
+    //         //         console.log(`Button ${index} pressed`);
+    //         //     }
+    //         // });
+    //     }, 100);
+    //     return () => clearInterval(interval);
+    // });
     useEffect(() => {
         console.log(gameID);
         // socket  = new WebSocket("wss://localhost:3000");https://7a5d-45-112-146-18.ngrok-free.app/
-        socket = new WebSocket("ws://"+address.slice(6,));
-    // },[]);
-    // useEffect(() => {
+        // socket = new WebSocket("ws://"+address.slice(6,));
+        socket = new WebSocket("ws://172.16.54.97:3000")
+    },[]);
+    useEffect(() => {
         const handleOpen = (event) => {
-            console.log("connection opened game page");
+            console.log("event open :",event);
         };
         const handleMessage = (event) => {
-            message = JSON.parse(event.data);
+            console.log("event message :", JSON.parse(event.data));
+            const message = JSON.parse(event.data);
             if(message.method === "broadcast"){
                 const {numberOfPlayer,players} = message.games;
-                console.log(players)
                 setPlayerData({
                     numberOfPlayer,
                     players: { ...players },
                 });
                 setEnemyPlayers((prevPlayers) => {
+                    const allEnemys = [];
                     const updatedEnemyPlayers = { ...prevPlayers };
                     for (const clientID_ in players) {
                         if (clientID_ !== clientID) {
                             updatedEnemyPlayers[clientID_] = players[clientID_];
+                            allEnemys.push(clientID_);
                         }
                     }
+                    setEnemyIds(allEnemys);
                     return updatedEnemyPlayers;
                 });
+
             }
         };
     
@@ -211,8 +218,8 @@ const PlayerInput = () => {
             socket.removeEventListener("close", handleClose);
             socket.removeEventListener("error", handleError);
         };
-    // }, [socket,setEnemyPlayers]);
-    }, []);
+    }, [socket,setEnemyPlayers]);
+    // }, []);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
@@ -387,30 +394,26 @@ const PlayerInput = () => {
             socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
         }
     });
-    return <>
-    <mesh ref={playerBodyMesh} scale={0.7 } >
-        {/* <boxGeometry />
-        <meshStandardMaterial roughness={0.1} metalness={0.5} side={THREE.DoubleSide}/> */}
-        {/* <RigidBody type={'dynamic'} colliders={'cuboid'}> */}
-            <Model key={clientID}/>
-        {/* </RigidBody> */}
-
-    </mesh>
-    {
-        Object.keys(enemyPlayers).map((clientID_) => {
-            const enemyPlayer = enemyPlayers[clientID_];
-            return (
-            <mesh 
-                scale={0.7 }
-                position={new THREE.Vector3().fromArray(enemyPlayer.position)}
-                quaternion={new THREE.Quaternion().fromArray(enemyPlayer.quaternion)}
+    return (
+        <>
+          <mesh ref={playerBodyMesh} scale={0.7} key={clientID}>
+            <Model />
+            {/* {console.log(playerBodyMesh.current.position.toArray() + " is the player")} */}
+          </mesh>
+      
+          {enemyIds.map((enemyId) => (
+            <mesh
+              key={enemyId}
+              scale={0.7}
+              position={new THREE.Vector3().fromArray(enemyPlayers[enemyId].position)}
+              quaternion={new THREE.Quaternion().fromArray(enemyPlayers[enemyId].quaternion)}
             >
-                <Model key={clientID_} />
+              <Model />
+              {console.log(enemyPlayers[enemyId].position + " is the enemy")}
             </mesh>
-            )
-        })
-    }
-    </>
+          ))}
+        </>
+    );
 };
 
 export default PlayerInput;
