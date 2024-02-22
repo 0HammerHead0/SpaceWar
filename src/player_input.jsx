@@ -1,21 +1,22 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useParams } from 'react-router-dom';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {math} from './math.js';      
 import * as THREE from 'three';
 import { useGLTF , Box} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
 import address from './socketAdd.js';
+import LaserRay from './LaserRay.jsx';
 var gamepad;
 var socket;
 // let message;
 var mouseMovementX;
 var mouseMovementY;
 const velocity     = {forward_backward:0,left_right:0};
-const acceleration = {forward_backward:0.1,left_right:0.05};
+const acceleration = {forward_backward:0.2,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
-const velocityMax  = {forward_backward:0.1,left_right:0.05};
+const velocityMax  = {forward_backward:0.3,left_right:0.05};
 
 const maxAngleX = Math.PI/4;
 const maxAngleY = Math.PI/6;
@@ -29,6 +30,7 @@ const oldLeftVector = new THREE.Vector3(-1, 0, 0);
 const newLeftVector = new THREE.Vector3(-1,2,0);
 const leftCrossVector = new THREE.Vector3().crossVectors(oldLeftVector, newLeftVector).normalize();
 const rightAngle = oldLeftVector.angleTo(newLeftVector);
+
 
 
 const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
@@ -46,7 +48,7 @@ const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
 };
 const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percentageY) => {
     let targetAngleX = -maxAngleX * percentageX * delta * (velocity.left_right/velocityMax.left_right);
-    let targetAngleY = -maxAngleY* percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
+    let targetAngleY = -maxAngleY * percentageY * 1.5 * delta * (velocity.forward_backward/velocityMax.forward_backward);
     const currentRotation = playerBodyMesh.current.quaternion.clone();
 
     const rotationQuaternionX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngleX);
@@ -58,7 +60,7 @@ const rotateModelAccordingToJoystick = (delta,playerBodyMesh,percentageX,percent
 const startRumble = (gamepad) => {
     if (gamepad && gamepad.vibrationActuator) {
       const rumbleOptions = {
-        startDelay: 0,  
+        startDelay: 0,
         duration: 200, // Rumble duration in milliseconds
         strongMagnitude: 0.6,
         weakMagnitude: 0.6,
@@ -77,24 +79,26 @@ const rotateObjectTowardsLeft = (object,factor,delta) => {
 };
 
 function Model() {
-    const gltf = useGLTF('../../public/models/swordfish.glb');
-    const clonedScene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
-  
+    const gltf = useGLTF('../../public/models/xwing.glb');
+
+    const clonedScene = useMemo(() => {
+        return gltf.scene.clone(true);
+    }, [gltf.scene]);
+
     return <primitive object={clonedScene} />;
-  }
-  
+}
 function updateCamPos(state,delta,playerBody){
-    const idealOffset = new THREE.Vector3(0,6,8);
+    const idealOffset = new THREE.Vector3(0,3,8);
     idealOffset.applyQuaternion(playerBody.quaternion);
     idealOffset.add(playerBody.position);
-    const t = 1.0 - Math.pow(0.001, delta);
+    const t = 1.0 - Math.pow(0.01, delta);
     state.camera.position.copy(state.camera.position.clone().lerp(idealOffset, t));
 }
 function updateCamLookAt(state,delta,playerBody){
     const idealLookAt = new THREE.Vector3(0,0,-3);
     idealLookAt.applyQuaternion(playerBody.quaternion);
     idealLookAt.add(playerBody.position);
-    const t = 1.0 - Math.pow(0.001, delta);
+    const t = 1.0 - Math.pow(0.01, delta);
     state.camera.lookAt(state.camera.position.clone().lerp(idealLookAt, t));
 }
 document.onmousemove = (e) => {
@@ -105,6 +109,11 @@ function getMouseMovement(){
     return {x:mouseMovementX,y:mouseMovementY};
 }
 const PlayerInput = () => {
+    const {scene} = useThree();
+    
+    const [laserRays, setLaserRays] = useState([]);
+
+
     const [enemyPlayers, setEnemyPlayers] = useState({});
     const [enemyIds, setEnemyIds] = useState([]);
     const [playerData, setPlayerData] = useState({
@@ -141,6 +150,40 @@ const PlayerInput = () => {
     var position = [0,0,0];
     var quaternion = [0,0,0,0];
     var kills = 0;
+    const createLaserRay = () => {
+        const position = playerBodyMesh.current.position.clone();
+        const direction = new THREE.Vector3(0, 0, -1);
+        direction.applyQuaternion(playerBodyMesh.current.quaternion);
+        const laserRay = new LaserRay(
+          new THREE.Ray(position, direction),
+          scene
+        //   ,[/* Add your objects to intersect here */]
+        );
+        scene.add(laserRay.getMesh());
+    
+        return laserRay;
+    };
+    const updateLaserRays = (delta) => {
+        // Update each active laser ray
+        setLaserRays((prevRays) => {
+            const updatedRays = [];
+        
+            prevRays.forEach((laserRay) => {
+                laserRay.update(delta);
+        
+                // Check if the laser ray is still active
+                if (laserRay.travelDistance < laserRay.maxLength) {
+                    updatedRays.push(laserRay);
+                } else {
+                    // If the laser ray reached the maximum distance, remove it from the scene
+                    // Replace this with your actual code to get the scene
+                    scene.remove(laserRay.getMesh());
+                }
+            });
+        
+            return updatedRays;
+        });
+      };
     // useEffect(() => {
     //     const interval = setInterval(() => {
     //         gamepad = navigator.getGamepads()[0];
@@ -167,6 +210,21 @@ const PlayerInput = () => {
     //     return () => clearInterval(interval);
     // });
     useEffect(() => {
+        const handleMouseDown = (event) => {
+            if (event.button === 0) {
+              // Left mouse click
+              const laserRay = createLaserRay();
+              setLaserRays((prevRays) => [...prevRays, laserRay]);
+            console.log("hello left click")
+            }
+        };
+        window.addEventListener('mousedown', handleMouseDown);
+
+        return () => {
+            window.removeEventListener('mousedown', handleMouseDown);
+    };
+    }, []);
+    useEffect(() => {
         console.log(gameID);
         // socket  = new WebSocket("wss://localhost:3000");https://7a5d-45-112-146-18.ngrok-free.app/
         // socket = new WebSocket("ws://"+address.slice(6,));
@@ -177,7 +235,7 @@ const PlayerInput = () => {
             console.log("event open :",event);
         };
         const handleMessage = (event) => {
-            console.log("event message :", JSON.parse(event.data));
+            // console.log("event message :", JSON.parse(event.data));
             const message = JSON.parse(event.data);
             if(message.method === "broadcast"){
                 const {numberOfPlayer,players} = message.games;
@@ -374,7 +432,7 @@ const PlayerInput = () => {
             if(Math.abs(xR)>0.0001 || Math.abs(yR)>0.0001){
                 rotateModelAccordingToJoystick(delta,playerBodyMesh,xR,yR);
             }
-        }
+        } 
         const forwardBackwardDistance = velocity.forward_backward ;
         const leftRightDistance = velocity.left_right ;
         const normalVector = new THREE.Vector3(leftRightDistance, 0, -forwardBackwardDistance);
@@ -384,36 +442,37 @@ const PlayerInput = () => {
         updateCamPos(state,delta,playerBody);
         updateCamLookAt(state,delta,playerBody);
         // make it limit to 60 times per second
-        if (performance.now() % (1000/60)< 16) {
+        updateLaserRays();
+        if (performance.now() % (1000/60)< 16 && modelMoving) {
             const broadCastPayload = {
                 health,
                 position:playerBody.position.toArray(),
                 quaternion:playerBody.quaternion.toArray(),
                 kills
             }
+            
             socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
         }
     });
-    return (
-        <>
-          <mesh ref={playerBodyMesh} scale={0.7} key={clientID}>
-            <Model />
-            {/* {console.log(playerBodyMesh.current.position.toArray() + " is the player")} */}
-          </mesh>
-      
-          {enemyIds.map((enemyId) => (
-            <mesh
-              key={enemyId}
-              scale={0.7}
-              position={new THREE.Vector3().fromArray(enemyPlayers[enemyId].position)}
-              quaternion={new THREE.Quaternion().fromArray(enemyPlayers[enemyId].quaternion)}
-            >
-              <Model />
-              {console.log(enemyPlayers[enemyId].position + " is the enemy")}
-            </mesh>
-          ))}
-        </>
-    );
+    return <>
+    <mesh ref={playerBodyMesh} scale={0.7 }  key={clientID}>
+        <Model/>
+    </mesh>
+    {
+        // enemyIds
+        enemyIds.map((enemyId)=>{
+            return(
+                <mesh scale={0.7}
+                key={enemyId}
+                position={new THREE.Vector3().fromArray(enemyPlayers[enemyId].position)}
+                quaternion={new THREE.Quaternion().fromArray(enemyPlayers[enemyId].quaternion)}
+                >
+                    <Model/>
+                </mesh>
+            )
+        })
+    }
+    </>
 };
 
 export default PlayerInput;

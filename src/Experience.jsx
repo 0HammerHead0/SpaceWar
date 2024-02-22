@@ -62,9 +62,9 @@ export default function Experience() {
         // map = {null}
         background />
         {/* <OrbitControls/> */}
-        {/* <EffectComposer> */}
-            {/* <Vignette eskil={false} offset={0.1} darkness={1.1} /> */}
-        {/* </EffectComposer> */}
+        {/* <EffectComposer>
+            <Vignette eskil={false} offset={0.1} darkness={1.1} />
+        </EffectComposer> */}
         </Canvas>
     )
 }
