@@ -3,11 +3,12 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {math} from './math.js';      
 import * as THREE from 'three';
-import { useGLTF , Box} from '@react-three/drei';
+import { useGLTF , Box, Sphere, Wireframe, Html} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
 import address from './socketAdd.js';
 import LaserRay from './LaserRay.jsx';
+import HealthBar from './HealthBar';
 var gamepad;
 var socket;
 // let message;
@@ -17,7 +18,6 @@ const velocity     = {forward_backward:0,left_right:0};
 const acceleration = {forward_backward:0.2,left_right:0.05};
 const deceleration = {forward_backward:0.008,left_right:0.003};
 const velocityMax  = {forward_backward:0.3,left_right:0.05};
-
 const maxAngleX = Math.PI/4;
 const maxAngleY = Math.PI/6;
 
@@ -150,73 +150,97 @@ const PlayerInput = () => {
     var position = [0,0,0];
     var quaternion = [0,0,0,0];
     var kills = 0;
+    const leftTopLaser = new THREE.Vector3(-1.9,0.1,1.2);
+    const leftBottomLaser = new THREE.Vector3(-1.9,-0.1,1.2);
+    const rightTopLaser = new THREE.Vector3(1.9,0.1,1.2);
+    const rightBottomLaser = new THREE.Vector3(1.9,-0.1,1.2);
+    const laserArray = [leftTopLaser,leftBottomLaser,rightBottomLaser,rightTopLaser]
+    var laserIndex = 0
     const createLaserRay = () => {
-        const position = playerBodyMesh.current.position.clone();
+        laserIndex = (laserIndex + 1) % 4;
+        const laser = laserArray[laserIndex].clone();
+        laser.applyQuaternion(playerBodyMesh.current.quaternion)
+        laser.add(playerBodyMesh.current.position)
         const direction = new THREE.Vector3(0, 0, -1);
         direction.applyQuaternion(playerBodyMesh.current.quaternion);
         const laserRay = new LaserRay(
-          new THREE.Ray(position, direction),
+          new THREE.Ray(laser, direction),
           scene
-        //   ,[/* Add your objects to intersect here */]
         );
         scene.add(laserRay.getMesh());
-    
+        
+        // scene.traverse((object) => {
+        //     if (object.isMesh && object.name && object.name.startsWith('enemy-')) {
+        //         const intersects = laserRay.intersectObjects(object);
+        //         // console.log(intersects)
+        //         if (intersects.length > 0) {
+        //             // console.log(`Intersection with enemy: ${object.name}`);
+        //         }
+        //     }
+        // });
+
+        const payload = {
+            method: "rayAnimation",
+            gameID,
+            clientID,
+            origin: laser.toArray(),
+            direction: direction.toArray()
+        }
+        socket.send(JSON.stringify(payload))
         return laserRay;
     };
     const updateLaserRays = (delta) => {
-        // Update each active laser ray
         setLaserRays((prevRays) => {
             const updatedRays = [];
-        
             prevRays.forEach((laserRay) => {
-                laserRay.update(delta);
-        
-                // Check if the laser ray is still active
-                if (laserRay.travelDistance < laserRay.maxLength) {
+                laserRay.update(delta,socket);
+                if (!laserRay.hitEnemy) {
                     updatedRays.push(laserRay);
-                } else {
-                    // If the laser ray reached the maximum distance, remove it from the scene
-                    // Replace this with your actual code to get the scene
-                    scene.remove(laserRay.getMesh());
                 }
+                // else {
+                //     scene.remove(laserRay.getMesh());
+                // }
             });
-        
             return updatedRays;
         });
-      };
-    // useEffect(() => {
-    //     const interval = setInterval(() => {
-    //         gamepad = navigator.getGamepads()[0];
-    //         if (gamepad) {
-    //             setXL(-gamepad.axes[0]);
-    //             setYL(gamepad.axes[1]);
-    //             setXR(gamepad.axes[2]);
-    //             setYR(-gamepad.axes[3]);
-    //             setRightTrigger(gamepad.buttons[7].value);
-    //             setLeftTrigger(gamepad.buttons[6].value);
-    //             setAPressed(gamepad.buttons[0].pressed);
-    //             setBPressed(gamepad.buttons[1].pressed);
-    //             setXPressed(gamepad.buttons[2].pressed);
-    //             setYPressed(gamepad.buttons[3].pressed);
-    //             setRB(gamepad.buttons[5].pressed);
-    //             setLB(gamepad.buttons[4].pressed);
-    //         }
-    //         // gamepad.buttons.forEach((button, index) => {
-    //         //     if (button.pressed) {
-    //         //         console.log(`Button ${index} pressed`);
-    //         //     }
-    //         // });
-    //     }, 100);
-    //     return () => clearInterval(interval);
-    // });
+    };
+    useEffect(() => {
+        const interval = setInterval(() => {
+            gamepad = navigator.getGamepads()[0];
+            if (gamepad) {
+                setXL(-gamepad.axes[0]);
+                setYL(gamepad.axes[1]);
+                setXR(gamepad.axes[2]);
+                setYR(-gamepad.axes[3]);
+                setRightTrigger(gamepad.buttons[7].value);
+                setLeftTrigger(gamepad.buttons[6].value);
+                setAPressed(gamepad.buttons[0].pressed);
+                setBPressed(gamepad.buttons[1].pressed);
+                setXPressed(gamepad.buttons[2].pressed);
+                setYPressed(gamepad.buttons[3].pressed);
+                setRB(gamepad.buttons[5].pressed);
+                setLB(gamepad.buttons[4].pressed);
+            }
+            // gamepad.buttons.forEach((button, index) => {
+            //     if (button.pressed) {
+            //         console.log(`Button ${index} pressed`);
+            //     }
+            // });
+        }, 100);
+        return () => clearInterval(interval);
+    });
     useEffect(() => {
         const handleMouseDown = (event) => {
             if (event.button === 0) {
               // Left mouse click
               const laserRay = createLaserRay();
               setLaserRays((prevRays) => [...prevRays, laserRay]);
-            console.log("hello left click")
             }
+            // scene.traverse((object) => {
+            //     if (object.isMesh && object.name && object.name.startsWith('enemy-')) {
+            //         console.log(object.name)
+            //     }
+            // });
         };
         window.addEventListener('mousedown', handleMouseDown);
 
@@ -226,8 +250,6 @@ const PlayerInput = () => {
     }, []);
     useEffect(() => {
         console.log(gameID);
-        // socket  = new WebSocket("wss://localhost:3000");https://7a5d-45-112-146-18.ngrok-free.app/
-        // socket = new WebSocket("ws://"+address.slice(6,));
         socket = new WebSocket("ws://172.16.54.97:3000")
     },[]);
     useEffect(() => {
@@ -235,7 +257,6 @@ const PlayerInput = () => {
             console.log("event open :",event);
         };
         const handleMessage = (event) => {
-            // console.log("event message :", JSON.parse(event.data));
             const message = JSON.parse(event.data);
             if(message.method === "broadcast"){
                 const {numberOfPlayer,players} = message.games;
@@ -257,6 +278,19 @@ const PlayerInput = () => {
                 });
 
             }
+            else if(message.method == "rayAnimation"){
+                const rayClientID = message.clientID
+                if(rayClientID!=clientID){
+                    const laser = new THREE.Vector3().fromArray(message.origin)
+                    const direction =  new THREE.Vector3().fromArray(message.direction)
+                    const laserRay = new LaserRay(
+                        new THREE.Ray(laser, direction),
+                        scene
+                    );
+                    setLaserRays((prevRays) => [...prevRays, laserRay]);
+                    scene.add(laserRay.getMesh());
+                }
+            }
         };
     
         const handleClose = (event) => {
@@ -277,7 +311,6 @@ const PlayerInput = () => {
             socket.removeEventListener("error", handleError);
         };
     }, [socket,setEnemyPlayers]);
-    // }, []);
     useEffect(()=>{
         if(gamepad){
             if(RB || LB){
@@ -455,6 +488,12 @@ const PlayerInput = () => {
         }
     });
     return <>
+    <mesh name={"enemy-sphere"} position={[0,0,-10]} scale={[8,3,3]}>
+        <sphereGeometry args={[1, 24, 24]} />
+        <meshStandardMaterial
+         side= {THREE.DoubleSide}
+         />
+    </mesh>
     <mesh ref={playerBodyMesh} scale={0.7 }  key={clientID}>
         <Model/>
     </mesh>
@@ -464,6 +503,7 @@ const PlayerInput = () => {
             return(
                 <mesh scale={0.7}
                 key={enemyId}
+                name = {"enemy-" + enemyId}
                 position={new THREE.Vector3().fromArray(enemyPlayers[enemyId].position)}
                 quaternion={new THREE.Quaternion().fromArray(enemyPlayers[enemyId].quaternion)}
                 >

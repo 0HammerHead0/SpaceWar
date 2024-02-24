@@ -11,6 +11,7 @@ import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-
 import { gsap } from 'gsap';
 // import WASDMovement from './WASDMovement2';
 import PlayerInput from './player_input';
+import HealthBar from './HealthBar';
 
 export default function Experience() {
   const envMap = useEnvironment({path: "../../public/hdris/pngs"});
@@ -31,6 +32,8 @@ export default function Experience() {
       
     }, []);
     return(
+      <>
+      <HealthBar/>
         <Canvas
             // onCreated={state => {
           //   state.gl.toneMapping = THREE.ReinhardToneMapping }}
@@ -66,5 +69,6 @@ export default function Experience() {
             <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer> */}
         </Canvas>
+        </>
     )
 }

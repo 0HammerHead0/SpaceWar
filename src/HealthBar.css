@@ -1,0 +1,27 @@
+:root{
+    --heightOuterHealthBar: 0.3rem;
+    --widthOuterHealthBar: calc(60%);
+    --bottomOuterHealthBar: 6rem;
+}
+.outerHealthBar{
+    background-color: rgba(20, 20, 19, 0.493);
+    border-radius:calc(var(--heightOuterHealthBar)/2);
+    width: var(--widthOuterHealthBar);
+    height: var(--heightOuterHealthBar);
+    z-index: 100;
+    position:fixed;
+    bottom: var(--bottomOuterHealthBar);
+    left: 50%;
+    translate: -50% 0%
+}
+.innerHealthBar{
+    border-radius:calc(var(--heightOuterHealthBar)/2);
+    position:fixed;
+    z-index: 100;
+    background-color: rgb(3, 255, 3);
+    width: calc(var(--widthOuterHealthBar));
+    height: calc(var(--heightOuterHealthBar));
+    bottom: calc(var(--bottomOuterHealthBar));
+    left:50%;
+    translate: -50% 0%;
+}
