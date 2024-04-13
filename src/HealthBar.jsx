@@ -1,10 +1,13 @@
 import React from 'react';
-import './HealthBar.css'
+import './HealthBar.css';
 
-const HealthBar = () => {
-
+const HealthBar = ({ kills }) => {
   return (
     <div>
+      {/* Kill Counter */}
+      <div className="killCounter">Kill:0</div>
+
+      {/* Health Bar */}
       <div className="outerHealthBar"></div>
       <div className="innerHealthBar"></div>
       <div className="healthBlob"></div>

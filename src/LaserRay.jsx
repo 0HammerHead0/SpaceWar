@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useParams } from 'react-router-dom';
 class LaserRay {
-  constructor(ray,scene) {
+  constructor(ray,scene,camera) {
     this.ray = ray;
     this.scene = scene;
     const geometry = new THREE.CylinderGeometry(0.025, 0.05, 5, 6);
@@ -18,11 +18,10 @@ class LaserRay {
     this.laserSegment.position.copy(this.ray.origin)
     this.hitEnemy = false;
     this.stopTraversing = false;
-    this.gameID;
-    this.clientID;
+    this.camera = camera
   }
 
-  update(delta,socket,clientID, gameID) {
+  update(delta,socket,gameID, clientID) {
     console.log(this.hitEnemy)
     if(!this.hitEnemy){
       if (this.travelDistance < this.maxLength) {
@@ -33,7 +32,6 @@ class LaserRay {
         const deltaVector = new THREE.Vector3().copy(this.ray.direction).multiplyScalar(deltaDistance);
         this.laserSegment.position.add(deltaVector);
         this.travelDistance += deltaDistance;
-        
         this.laserSegment.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this.ray.direction);
         this.customTraverse(this.scene,(object) => {
           if (object.isMesh && object.name && object.name.startsWith('enemy-') ) {
@@ -45,11 +43,34 @@ class LaserRay {
               this.stopTraversing = true;
               this.destroy();
               const payload = {
-                gameID: this.gameID,
-                clientID: this.clientID,
+                gameID: gameID,
+                clientID: clientID,
                 method: "hit",
                 enemyID: object.name.slice(6,)
               }
+              // console.log(payload)
+
+              const listener = new THREE.AudioListener();
+              this.camera.add(listener);
+              
+              // Create a PositionalAudio object
+              const sound = new THREE.PositionalAudio(listener);
+              
+              // Load the audio file
+              const audioLoader = new THREE.AudioLoader();
+              audioLoader.load('/sounds/missile-explosion.mp3', function(buffer) {
+                  // Set the audio buffer
+                  sound.setBuffer(buffer);
+                  // Set other properties as needed
+                  sound.setRefDistance(10);
+                  sound.setLoop(false);
+                  // Play the audio
+                  sound.play();
+              });
+              
+              // Add the PositionalAudio to the playerBodyMesh
+              object.add(sound);
+
               socket.send(JSON.stringify(payload))
             }
           }

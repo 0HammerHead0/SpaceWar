@@ -3,12 +3,15 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {math} from './math.js';      
 import * as THREE from 'three';
-import { useGLTF , Box, Sphere, Wireframe, Html} from '@react-three/drei';
+import { useGLTF , Box, Sphere, Wireframe, Html, Edges, PositionalAudio} from '@react-three/drei';
 import { Physics, RigidBody, RapierRigidBody, quat, vec3, euler  } from "@react-three/rapier";
 import {functions} from './functions.js';
 import address from './socketAdd.js';
 import LaserRay from './LaserRay.jsx';
 import HealthBar from './HealthBar';
+import { client } from 'websocket';
+import EndGame from './EndGame.jsx';
+import ListItem from './ListItem.jsx';
 var gamepad;
 var socket;
 // let message;
@@ -31,7 +34,13 @@ const newLeftVector = new THREE.Vector3(-1,2,0);
 const leftCrossVector = new THREE.Vector3().crossVectors(oldLeftVector, newLeftVector).normalize();
 const rightAngle = oldLeftVector.angleTo(newLeftVector);
 
-
+function resetPosition(playerBodyMesh){
+    const x = (Math.random() - 0.5) * 20;
+    const y = (Math.random() - 0.5) * 20;
+    const z = (Math.random() - 0.5) * 20;
+    playerBodyMesh.position.set(x,y,z);
+    playerBodyMesh.lookAt(0,0,0);
+}
 
 const rotateModelAccordingToMouse = (delta,playerBodyMesh) => {
     const mouseMovement = getMouseMovement();
@@ -108,15 +117,30 @@ document.onmousemove = (e) => {
 function getMouseMovement(){
     return {x:mouseMovementX,y:mouseMovementY};
 }
+// function Sound({ url }) {
+//     const sound = useRef()
+//     const { camera } = useThree()
+//     const [listener] = useState(() => new THREE.AudioListener())
+//     const buffer = useLoader(THREE.AudioLoader, url)
+//     useEffect(() => {
+//       sound.current.setBuffer(buffer)
+//       sound.current.setRefDistance(1)
+//       sound.current.setLoop(true)
+//       sound.current.play()
+//       camera.add(listener)
+//       return () => camera.remove(listener)
+//     }, [])
+//     return <positionalAudio ref={sound} args={[listener]} />
+// }
 const PlayerInput = () => {
-    const {scene} = useThree();
+    const { camera, scene } = useThree();
     
     const [laserRays, setLaserRays] = useState([]);
-
 
     const [enemyPlayers, setEnemyPlayers] = useState({});
     const [enemyIds, setEnemyIds] = useState([]);
     const [playerData, setPlayerData] = useState({
+        end:false,
         numberOfPlayers: 1,
         players: {
             [String(useParams().clientID)]: {
@@ -159,41 +183,58 @@ const PlayerInput = () => {
     const createLaserRay = () => {
         laserIndex = (laserIndex + 1) % 4;
         const laser = laserArray[laserIndex].clone();
-        laser.applyQuaternion(playerBodyMesh.current.quaternion)
-        laser.add(playerBodyMesh.current.position)
-        const direction = new THREE.Vector3(0, 0, -1);
-        direction.applyQuaternion(playerBodyMesh.current.quaternion);
+        laser.applyQuaternion(playerBodyMesh.current.quaternion);
+        laser.add(playerBodyMesh.current.position);
+        const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(playerBodyMesh.current.quaternion);
+    
         const laserRay = new LaserRay(
-          new THREE.Ray(laser, direction),
-          scene
+            new THREE.Ray(laser, direction),
+            scene,
+            camera
         );
         scene.add(laserRay.getMesh());
-        
-        // scene.traverse((object) => {
-        //     if (object.isMesh && object.name && object.name.startsWith('enemy-')) {
-        //         const intersects = laserRay.intersectObjects(object);
-        //         // console.log(intersects)
-        //         if (intersects.length > 0) {
-        //             // console.log(`Intersection with enemy: ${object.name}`);
-        //         }
-        //     }
-        // });
-
+    
         const payload = {
             method: "rayAnimation",
             gameID,
             clientID,
             origin: laser.toArray(),
             direction: direction.toArray()
-        }
-        socket.send(JSON.stringify(payload))
-        return laserRay;
+        };
+        
+        const listener = new THREE.AudioListener();
+        camera.add(listener);
+        
+        // Create a PositionalAudio object
+        const sound = new THREE.PositionalAudio(listener);
+        
+        // Load the audio file
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load('/sounds/laser-gun.mp3', function(buffer) {
+            // Set the audio buffer
+            sound.setBuffer(buffer);
+            // Set other properties as needed
+            sound.setRefDistance(1);
+            sound.setLoop(false);
+            // Play the audio
+            sound.play();
+        });
+        
+        // Add the PositionalAudio to the playerBodyMesh
+        playerBodyMesh.current.add(sound);
+        
+        
+        
+        socket.send(JSON.stringify(payload));
+        // Return an object containing both the LaserRay object and the LaserSound component
+        return laserRay
     };
+    
     const updateLaserRays = (delta) => {
         setLaserRays((prevRays) => {
             const updatedRays = [];
             prevRays.forEach((laserRay) => {
-                laserRay.update(delta,socket);
+                laserRay.update(delta,socket,gameID,clientID);
                 if (!laserRay.hitEnemy) {
                     updatedRays.push(laserRay);
                 }
@@ -249,8 +290,7 @@ const PlayerInput = () => {
     };
     }, []);
     useEffect(() => {
-        console.log(gameID);
-        socket = new WebSocket("ws://172.16.54.97:3000")
+        socket = new WebSocket("ws://172.16.54.53:3000")
     },[]);
     useEffect(() => {
         const handleOpen = (event) => {
@@ -259,24 +299,31 @@ const PlayerInput = () => {
         const handleMessage = (event) => {
             const message = JSON.parse(event.data);
             if(message.method === "broadcast"){
-                const {numberOfPlayer,players} = message.games;
+                const {end,numberOfPlayers,players} = message.games;
                 setPlayerData({
-                    numberOfPlayer,
+                    end,
+                    numberOfPlayers,
                     players: { ...players },
                 });
                 setEnemyPlayers((prevPlayers) => {
                     const allEnemys = [];
-                    const updatedEnemyPlayers = { ...prevPlayers };
+                    const updatedEnemyPlayers = { ...prevPlayers }; 
                     for (const clientID_ in players) {
                         if (clientID_ !== clientID) {
                             updatedEnemyPlayers[clientID_] = players[clientID_];
                             allEnemys.push(clientID_);
                         }
+                        // else{
+                        //     // --heightOuterHealthBar: 1rem;
+                        //     // --widthOuterHealthBar: calc(60%);
+                        //     // --bottomOuterHealthBar: 6rem;
+                        //     // --heightInnerHealthBar: calc(var(--heightOuterHealthBar) - 0.1rem);
+                        //     // --widthInnerHealthBar: calc(var(--widthOuterHealthBar) - 0.1rem);
+                        // }
                     }
                     setEnemyIds(allEnemys);
                     return updatedEnemyPlayers;
                 });
-
             }
             else if(message.method == "rayAnimation"){
                 const rayClientID = message.clientID
@@ -285,9 +332,34 @@ const PlayerInput = () => {
                     const direction =  new THREE.Vector3().fromArray(message.direction)
                     const laserRay = new LaserRay(
                         new THREE.Ray(laser, direction),
-                        scene
+                        scene,
+                        camera
                     );
                     setLaserRays((prevRays) => [...prevRays, laserRay]);
+                    
+                    // Load the laser sound
+                    const audioLoader = new THREE.AudioLoader();
+                    const listener = new THREE.AudioListener();
+                    camera.add(listener)
+                    audioLoader.load('/sounds/laser-gun.mp3', function(buffer) {
+                        // Create a PositionalAudio object
+                        const sound = new THREE.PositionalAudio(listener);
+                        sound.setBuffer(buffer);
+                        sound.setRefDistance(1);
+                        sound.setLoop(false);
+                        // Attach the audio to the enemy model
+                        const enemyModel = scene.getObjectByName(`enemy-${rayClientID}`);
+                        if (enemyModel) {
+                            enemyModel.add(sound);
+                            // Play the audio
+                            sound.play();
+                        }
+                        else{
+                            console.log("no such enemey model")
+                        }
+                    });
+
+                    ///////////////
                     scene.add(laserRay.getMesh());
                 }
             }
@@ -336,6 +408,10 @@ const PlayerInput = () => {
         };
     }, [velocity]);
     useFrame((state, delta) => {
+        const innerHealthBar = document.getElementsByClassName("innerHealthBar")[0];
+        const killCounter=document.getElementsByClassName("killCounter")[0];
+        innerHealthBar.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[clientID].health/100} )`
+        killCounter.textContent = "Kill: " + playerData.players[clientID].kills;
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
@@ -483,31 +559,61 @@ const PlayerInput = () => {
                 quaternion:playerBody.quaternion.toArray(),
                 kills
             }
-            
+            // console.log(playerData)
             socket.send(JSON.stringify({method:"update",gameID,clientID,data:broadCastPayload}));
         }
-    });
+        if(playerData.players[clientID].health<=0){
+            resetPosition(playerBodyMesh)
+        }     
+    });useEffect(() => {
+        if (playerData.end) {
+            let endgame = document.getElementsByClassName("EndGame")[0]; // Get the first element with class "EndGame"
+            endgame.style.zIndex = 1000;
+            endgame.style.opacity = 1;
+            let list = document.getElementById("list")
+            let endGameContentWrapper = document.createElement('div'); // Create a new div wrapper
+            Object.keys(playerData.players).forEach((clientID) => {
+                let content = document.createElement('div'); // Create a new div for each player's data
+                content.className = "content";
+                content.innerHTML = `
+                    <div class="left">
+                        <p>${clientID}</p>
+                    </div>
+                    <div class="right">
+                        <p>${playerData.players[clientID].kills}</p>
+                    </div>
+                `;
+                endGameContentWrapper.appendChild(content); // Append each player's data div to the wrapper
+            });
+            list.innerHTML='';
+            list.appendChild(endGameContentWrapper)
+        }
+    }, [playerData.end, playerData.numberOfPlayers]);    
     return <>
-    <mesh name={"enemy-sphere"} position={[0,0,-10]} scale={[8,3,3]}>
+    {/* <mesh name={"enemy-sphere"} position={[0,0,-10]} scale={[8,3,3]}>
         <sphereGeometry args={[1, 24, 24]} />
         <meshStandardMaterial
-         side= {THREE.DoubleSide}
-         />
-    </mesh>
+        side= {THREE.DoubleSide}
+        />
+    </mesh> */}
     <mesh ref={playerBodyMesh} scale={0.7 }  key={clientID}>
         <Model/>
     </mesh>
     {
-        // enemyIds
         enemyIds.map((enemyId)=>{
             return(
                 <mesh scale={0.7}
                 key={enemyId}
-                name = {"enemy-" + enemyId}
                 position={new THREE.Vector3().fromArray(enemyPlayers[enemyId].position)}
                 quaternion={new THREE.Quaternion().fromArray(enemyPlayers[enemyId].quaternion)}
-                >
+                >   <Html>
+                        <img id='crosshair' src="/red_dot-removebg-preview.png"/>
+                    </Html>
                     <Model/>
+                    <mesh name = {"enemy-" + enemyId} scale={[0.7,0.2,0.7]} >
+                        <sphereGeometry args={[5, 20, 20]} />
+                        <meshStandardMaterial color={0x0909ff} transparent={true} opacity={0.1}/>
+                    </mesh>
                 </mesh>
             )
         })

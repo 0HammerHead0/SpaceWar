@@ -24,3 +24,7 @@ Canvas{
   height: 100vh;
   cursor: crosshair
 }
+#crosshair{
+  height: 3vh;
+  transform: translate(-50%)
+}

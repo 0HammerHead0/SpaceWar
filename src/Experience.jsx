@@ -12,7 +12,7 @@ import { gsap } from 'gsap';
 // import WASDMovement from './WASDMovement2';
 import PlayerInput from './player_input';
 import HealthBar from './HealthBar';
-
+import EndGame from './EndGame';
 export default function Experience() {
   const envMap = useEnvironment({path: "../../public/hdris/pngs"});
   useEffect(() => {
@@ -33,6 +33,7 @@ export default function Experience() {
     }, []);
     return(
       <>
+      <EndGame/>
       <HealthBar/>
         <Canvas
             // onCreated={state => {

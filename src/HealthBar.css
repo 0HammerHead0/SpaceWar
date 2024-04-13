@@ -1,27 +1,39 @@
 :root{
-    --heightOuterHealthBar: 0.3rem;
+    --heightOuterHealthBar: 1rem;
     --widthOuterHealthBar: calc(60%);
     --bottomOuterHealthBar: 6rem;
+    --heightInnerHealthBar: calc(var(--heightOuterHealthBar) - 0.1rem);
+    --widthInnerHealthBar: calc(var(--widthOuterHealthBar) - 0.1rem);
 }
 .outerHealthBar{
-    background-color: rgba(20, 20, 19, 0.493);
-    border-radius:calc(var(--heightOuterHealthBar)/2);
+    background-color: rgba(255, 255, 255, 0.808);
+    /* border-radius:calc(var(--heightOuterHealthBar)/4); */
     width: var(--widthOuterHealthBar);
     height: var(--heightOuterHealthBar);
     z-index: 100;
     position:fixed;
     bottom: var(--bottomOuterHealthBar);
     left: 50%;
-    translate: -50% 0%
+    transform: translate(-50%, 0%);
 }
 .innerHealthBar{
-    border-radius:calc(var(--heightOuterHealthBar)/2);
+    /* border-radius:calc(var(--heightOuterHealthBar)/4); */
     position:fixed;
     z-index: 100;
-    background-color: rgb(3, 255, 3);
-    width: calc(var(--widthOuterHealthBar));
-    height: calc(var(--heightOuterHealthBar));
-    bottom: calc(var(--bottomOuterHealthBar));
+    /* background-color: rgb(56, 142, 255); */
+    background: linear-gradient(to right, rgb(0, 60, 255), rgb(125, 203, 255)) !important;
+    width: var(--widthInnerHealthBar);
+    height: var(--heightInnerHealthBar);
+    bottom: calc(var(--bottomOuterHealthBar) + 0.05rem);
     left:50%;
-    translate: -50% 0%;
+    transform: translate(-50%, 0%);
 }
+.killCounter {
+    position: fixed;
+    top: 1rem;
+    right: 3rem;
+    z-index: 101; /* Higher than health bar */
+    color: white; /* Change color as needed */
+    font-size: 2rem; /* Adjust font size as needed */
+    font-weight: bold; /* Adjust font weight as needed */
+  }

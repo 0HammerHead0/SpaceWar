@@ -1,0 +1,52 @@
+.EndGame{
+    --height: auto;
+    --width: 80rem;
+    background-color: rgba(48, 48, 48, 0.544);
+    border-color: white;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 10px;
+    width: var(--width);
+    height: var(--height);
+    position: relative;
+    z-index: -1000;
+    opacity: 0;
+    left: 50%;
+    top: calc(50%);
+    transform: translateY(-50%);
+    left: calc(50% - var(--width)/2);
+
+
+    filter: blur();
+    text-align: center;
+    font-size: 4rem;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    /* backdrop-filter: red; */
+}
+.heading{
+    position: relative;
+    z-index: 1;
+    padding-bottom: 2rem;
+}
+.content{
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: large;
+    display: flex;
+    flex-direction: row;
+    gap:0px;
+    align-items: center;
+    padding: 0;
+    justify-content: center;
+}
+.content p{
+    margin: 10px;
+    text-align: center;
+}
+.left, .right{
+    width: 50%;
+    border-color: rgb(177, 177, 177);
+    border-width: 0.5px;
+    border-style: solid;
+}
