@@ -50,3 +50,10 @@
     border-width: 0.5px;
     border-style: solid;
 }
+
+.green_bg{
+    background-color: rgba(14, 209, 14, 0.434);
+}
+.sub-heading{
+    background-color: rgba(31, 31, 31, 0.841);
+}

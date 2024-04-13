@@ -6,9 +6,9 @@ const EndGame = () => {
   return (
     <div className='EndGame' id='EndGame'>
       <div className="heading">End Game</div>
-      <div className="content" style={{ fontSize: '30px' }}>
+      <div className="content sub-heading" style={{ fontSize: '30px' }}>
         <div className="left">
-          <p>ClientID</p>
+          <p>Player ID</p>
         </div>
         <div className="right">
           <p>Kills</p>

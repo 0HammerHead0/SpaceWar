@@ -579,6 +579,14 @@ const PlayerInput = () => {
             endgame.style.opacity = 1;
             let list = document.getElementById("list")
             let endGameContentWrapper = document.createElement('div'); // Create a new div wrapper
+            let max_kill=-1
+            let winner=null
+            Object.keys(playerData.players).forEach((clientID) => {
+                if(playerData.players[clientID].kills>max_kill){
+                    max_kill=playerData.players[clientID].kills;
+                    winner=clientID
+                }
+            });
             Object.keys(playerData.players).forEach((clientID) => {
                 let content = document.createElement('div'); // Create a new div for each player's data
                 content.className = "content";
@@ -590,6 +598,9 @@ const PlayerInput = () => {
                         <p>${playerData.players[clientID].kills}</p>
                     </div>
                 `;
+                if(clientID==winner){
+                    content.className="green_bg content"
+                }
                 endGameContentWrapper.appendChild(content); // Append each player's data div to the wrapper
             });
             list.innerHTML='';

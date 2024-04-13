@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import address from "../socketAdd.js";
 import "./Home.css";
-import bgMusic from "/sounds/intro.mp3";
+import bgMusic from "/sounds/intro2.mp3";
 
 
 export default function Home() {
