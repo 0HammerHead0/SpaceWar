@@ -12,6 +12,7 @@ import HealthBar from './HealthBar';
 import { client } from 'websocket';
 import EndGame from './EndGame.jsx';
 import ListItem from './ListItem.jsx';
+import exitsong from "/sounds/exit.mp3"
 var gamepad;
 var socket;
 // let message;
@@ -566,7 +567,13 @@ const PlayerInput = () => {
             resetPosition(playerBodyMesh)
         }     
     });useEffect(() => {
+
+        const audio = new Audio(exitsong);
         if (playerData.end) {
+            
+            audio.loop = true;
+            audio.volume = 0.5;
+            audio.play();
             let endgame = document.getElementsByClassName("EndGame")[0]; // Get the first element with class "EndGame"
             endgame.style.zIndex = 1000;
             endgame.style.opacity = 1;
@@ -588,14 +595,12 @@ const PlayerInput = () => {
             list.innerHTML='';
             list.appendChild(endGameContentWrapper)
         }
+        return() =>{
+            audio.pause();
+            audio.currentTime = 0;
+        }
     }, [playerData.end, playerData.numberOfPlayers]);    
     return <>
-    {/* <mesh name={"enemy-sphere"} position={[0,0,-10]} scale={[8,3,3]}>
-        <sphereGeometry args={[1, 24, 24]} />
-        <meshStandardMaterial
-        side= {THREE.DoubleSide}
-        />
-    </mesh> */}
     <mesh ref={playerBodyMesh} scale={0.7 }  key={clientID}>
         <Model/>
     </mesh>

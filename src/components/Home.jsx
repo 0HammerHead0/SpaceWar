@@ -2,6 +2,9 @@ import React, { useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import address from "../socketAdd.js";
 import "./Home.css";
+import bgMusic from "/sounds/intro.mp3";
+
+
 export default function Home() {
   const create = useRef();
   const join = useRef();
@@ -21,9 +24,16 @@ export default function Home() {
   useEffect(() =>{
     socket = new WebSocket("ws://172.16.54.53:3000");
     console.log(address.slice(6,))
+    
+    const audio = new Audio(bgMusic);
+    audio.loop = true;
+    audio.volume = 0.5;
+    audio.play();
     // socket = new WebSocket("ws://"+address.slice(6,))
     return () => {
       socket.close();
+      audio.pause();
+      audio.currentTime = 0;
     };
   }, []);
   useEffect(() => {
