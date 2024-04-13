@@ -28,3 +28,32 @@ Canvas{
   height: 3vh;
   transform: translate(-50%)
 }
+.enemy-outerHealthBar{
+  background-color: rgba(255, 255, 255, 0.808);
+  /* border-radius:calc(var(--heightOuterHealthBar)/4); */
+  width: var(--widthOuterHealthBar);
+  height: var(--heightOuterHealthBar);
+  z-index: 100;
+  position:fixed;
+  bottom: var(--bottomOuterHealthBar);
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+.enemy-innerHealthBar{
+  /* border-radius:calc(var(--heightOuterHealthBar)/4); */
+  position:fixed;
+  z-index: 100;
+  /* background-color: rgb(56, 142, 255); */
+  background: linear-gradient(to right, rgb(255, 0, 0), rgb(255, 83, 83)) !important;
+  width: var(--widthInnerHealthBar);
+  height: var(--heightInnerHealthBar);
+  bottom: calc(var(--bottomOuterHealthBar) + 0.04rem);
+  left:50%;
+  transform: translate(-50%, 0%);
+}
+.enemyHealthBarWrapper{
+  position:fixed;
+  z-index: 100;
+  height: var(--heightOuterHealthBar);
+  width: var(--widthOuterHealthBar);
+}

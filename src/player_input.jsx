@@ -413,6 +413,12 @@ const PlayerInput = () => {
         const killCounter=document.getElementsByClassName("killCounter")[0];
         innerHealthBar.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[clientID].health/100} )`
         killCounter.textContent = "Kill: " + playerData.players[clientID].kills;
+        enemyIds.forEach((enemyId) => {
+            const enemyHealth = document.getElementById(enemyId+"innerHealthBar");
+            enemyHealth.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[enemyId].health/100} )`
+        });
+
+
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
@@ -566,8 +572,8 @@ const PlayerInput = () => {
         if(playerData.players[clientID].health<=0){
             resetPosition(playerBodyMesh)
         }     
-    });useEffect(() => {
-
+    });
+    useEffect(() => {
         const audio = new Audio(exitsong);
         if (playerData.end) {
             
@@ -630,6 +636,17 @@ const PlayerInput = () => {
                         <sphereGeometry args={[5, 20, 20]} />
                         <meshStandardMaterial color={0x0909ff} transparent={true} opacity={0.1}/>
                     </mesh>
+                    <Html
+                        wrapperClass="enemyHealthBarWrapper"
+                        center
+                        sprite
+                        transform
+                        distanceFactor={15}
+                        position={[0, -2, 0]}
+                    >
+                        <div id={enemyId+"outerHealthBar"} className='enemy-outerHealthBar'></div>
+                        <div id={enemyId+"innerHealthBar"} className='enemy-innerHealthBar'></div>
+                    </Html>
                 </mesh>
             )
         })
