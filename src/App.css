@@ -22,38 +22,49 @@ body{
 Canvas{
   width: 100vw;
   height: 100vh;
-  cursor: crosshair
+  cursor: crosshair;
 }
 #crosshair{
   height: 3vh;
   transform: translate(-50%)
 }
+:root{
+  --heightOuterHealthBar_: 0.75rem;
+  --widthOuterHealthBar_: 400px;
+  --bottomOuterHealthBar_: 15rem;
+  --innerBorderRadius_: 10px;
+  --outerBorderRadius_: calc(var(--innerBorderRadius_) + 0.1rem);
+  --heightInnerHealthBar_: calc(var(--heightOuterHealthBar_) - 0.10rem);
+  --widthInnerHealthBar_: calc(var(--widthOuterHealthBar_) - 0.16rem);
+}
 .enemy-outerHealthBar{
   background-color: rgba(255, 255, 255, 0.808);
+  border-radius: var(--outerBorderRadius_);
   /* border-radius:calc(var(--heightOuterHealthBar)/4); */
-  width: var(--widthOuterHealthBar);
-  height: var(--heightOuterHealthBar);
+  width: var(--widthOuterHealthBar_);
+  height: var(--heightOuterHealthBar_);
   z-index: 100;
   position:fixed;
-  bottom: var(--bottomOuterHealthBar);
+  bottom: var(--bottomOuterHealthBar_);
   left: 50%;
   transform: translate(-50%, 0%);
 }
 .enemy-innerHealthBar{
+  border-radius: var(--innerBorderRadius_);
   /* border-radius:calc(var(--heightOuterHealthBar)/4); */
   position:fixed;
   z-index: 100;
   /* background-color: rgb(56, 142, 255); */
-  background: linear-gradient(to right, rgb(255, 0, 0), rgb(255, 83, 83)) !important;
-  width: var(--widthInnerHealthBar);
-  height: var(--heightInnerHealthBar);
-  bottom: calc(var(--bottomOuterHealthBar) + 0.04rem);
+  background: linear-gradient(to right, rgba(251, 255, 0, 0.639), rgba(138, 143, 0, 0.696)) !important;
+  width: var(--widthInnerHealthBar_);
+  height: var(--heightInnerHealthBar_);
+  bottom: calc(var(--bottomOuterHealthBar_) + 0.04rem);
   left:50%;
   transform: translate(-50%, 0%);
 }
 .enemyHealthBarWrapper{
   position:fixed;
   z-index: 100;
-  height: var(--heightOuterHealthBar);
-  width: var(--widthOuterHealthBar);
+  height: var(--heightOuterHealthBar_);
+  width: var(--widthOuterHealthBar_);
 }

@@ -411,14 +411,12 @@ const PlayerInput = () => {
     useFrame((state, delta) => {
         const innerHealthBar = document.getElementsByClassName("innerHealthBar")[0];
         const killCounter=document.getElementsByClassName("killCounter")[0];
-        innerHealthBar.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[clientID].health/100} )`
-        killCounter.textContent = "Kill: " + playerData.players[clientID].kills;
         enemyIds.forEach((enemyId) => {
             const enemyHealth = document.getElementById(enemyId+"innerHealthBar");
-            enemyHealth.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[enemyId].health/100} )`
+            enemyHealth.style.width  = `calc((var(--widthOuterHealthBar_) - 0.1rem) * ${playerData.players[enemyId].health/100} )`
         });
-
-
+        innerHealthBar.style.width  = `calc((var(--widthOuterHealthBar) - 0.1rem) * ${playerData.players[clientID].health/100} )`
+        killCounter.textContent = "Kill: " + playerData.players[clientID].kills;
         const playerBody = playerBodyMesh.current;
         var modelMoving = false;
         if(!navigator.getGamepads()[0]){
@@ -572,14 +570,17 @@ const PlayerInput = () => {
         if(playerData.players[clientID].health<=0){
             resetPosition(playerBodyMesh)
         }     
-    });
-    useEffect(() => {
+    });useEffect(() => {
+
         const audio = new Audio(exitsong);
         if (playerData.end) {
             
             audio.loop = true;
-            audio.volume = 0.5;
-            audio.play();
+            audio.volume = 0.2;
+            const delay = 1000; // Adjust the delay time in milliseconds
+            setTimeout(() => {
+              audio.play();
+            }, delay);
             let endgame = document.getElementsByClassName("EndGame")[0]; // Get the first element with class "EndGame"
             endgame.style.zIndex = 1000;
             endgame.style.opacity = 1;
@@ -641,7 +642,7 @@ const PlayerInput = () => {
                         center
                         sprite
                         transform
-                        distanceFactor={15}
+                        distanceFactor={4}
                         position={[0, -2, 0]}
                     >
                         <div id={enemyId+"outerHealthBar"} className='enemy-outerHealthBar'></div>
